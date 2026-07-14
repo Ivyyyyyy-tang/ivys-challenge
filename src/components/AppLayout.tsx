@@ -16,6 +16,7 @@ const COMFORTABLE_SIDEBAR_WIDTH = 220;
 
 const dashboardNavigation: NavigationItem[] = [
   { id: 'vocabulary', to: '/vocabulary-library', label: 'Vocabulary' },
+  { id: 'vocabulary-garden', to: '/vocabulary-garden', label: 'Vocabulary Garden' },
   { id: 'ai-reading', to: '/ai-reading', label: 'AI Reading' },
   { id: 'my-vocabulary-bank', to: '/personal-vocabulary-bank', label: 'My Vocabulary Bank' },
   { id: 'ai-review-coach', to: '/ai-review-coach', label: 'AI Review Coach' },

@@ -5,6 +5,7 @@ import { AiReviewCoachPage } from './pages/AiReviewCoachPage';
 import { LandingPage } from './pages/LandingPage';
 import { PersonalVocabularyBankPage } from './pages/PersonalVocabularyBankPage';
 import { PersonalVocabularyBankWordCardPage } from './pages/PersonalVocabularyBankWordCardPage';
+import { VocabularyGardenPage } from './pages/VocabularyGardenPage';
 import { VocabularyLibraryPage } from './pages/VocabularyLibraryPage';
 import { WordCardModePage } from './pages/WordCardModePage';
 import { WordListModePage } from './pages/WordListModePage';
@@ -15,6 +16,7 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route index element={<LandingPage />} />
         <Route path="vocabulary-library" element={<VocabularyLibraryPage />} />
+        <Route path="vocabulary-garden" element={<VocabularyGardenPage />} />
         <Route path="vocabulary-library/chapter/:chapterId/word-card" element={<WordCardModePage />} />
         <Route path="vocabulary-library/chapter/:chapterId/word-list" element={<WordListModePage />} />
         <Route path="ai-reading" element={<AiReadingPage />} />
