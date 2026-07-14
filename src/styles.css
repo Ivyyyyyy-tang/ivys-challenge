@@ -23,9 +23,24 @@ body {
     linear-gradient(180deg, #f8f3ec 0%, #f5f0e8 42%, #f2ece4 100%);
 }
 
-.system-shell,
-.system-shell * {
-  cursor: url("./assets/rabbit-cursor.svg") 8 8, auto;
+body,
+body * {
+  cursor: url("./assets/rabbit-cursor-user.png") 3 3, auto;
+}
+
+input,
+textarea,
+[contenteditable='true'] {
+  cursor: text;
+}
+
+select {
+  cursor: pointer;
+}
+
+.cursor-col-resize,
+.cursor-col-resize * {
+  cursor: col-resize !important;
 }
 
 * {

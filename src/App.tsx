@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { AiReadingPage } from './pages/AiReadingPage';
-import { AiReviewCoachPage } from './pages/AiReviewCoachPage';
 import { LandingPage } from './pages/LandingPage';
 import { PersonalVocabularyBankPage } from './pages/PersonalVocabularyBankPage';
 import { PersonalVocabularyBankWordCardPage } from './pages/PersonalVocabularyBankWordCardPage';
@@ -23,7 +22,7 @@ export default function App() {
         <Route path="personal-vocabulary-bank" element={<PersonalVocabularyBankPage />} />
         <Route path="personal-vocabulary-bank/word-card" element={<PersonalVocabularyBankWordCardPage />} />
         <Route path="collocation-system" element={<Navigate to="/vocabulary-library" replace />} />
-        <Route path="ai-review-coach" element={<AiReviewCoachPage />} />
+        <Route path="ai-review-coach" element={<Navigate to="/vocabulary-library" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

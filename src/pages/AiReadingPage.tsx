@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useVocabulary } from '../context/VocabularyContext';
 import { type VocabularyWord } from '../data/vocabulary';
+import { speakWord } from '../utils/speech';
 
 type ReadingSegment = {
   text: string;
@@ -73,10 +74,7 @@ export function AiReadingPage() {
   const difficultyLabel = learnedWords.length >= 12 ? 'Intermediate' : 'Foundational';
 
   const handleSpeak = (word: string) => {
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-US';
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    speakWord(word);
   };
 
   const handleAddUnknownWord = (word: VocabularyWord) => {

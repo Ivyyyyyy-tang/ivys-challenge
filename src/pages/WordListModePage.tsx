@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { WordListTable } from '../components/WordListTable';
 import { useVocabulary } from '../context/VocabularyContext';
+import { speakWord } from '../utils/speech';
 
 export function WordListModePage() {
   const navigate = useNavigate();
@@ -11,10 +12,7 @@ export function WordListModePage() {
   const words = useMemo(() => getWordsByChapter(chapter), [chapter, getWordsByChapter]);
 
   const handleSpeak = (word: string) => {
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-US';
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    speakWord(word);
   };
 
   return (

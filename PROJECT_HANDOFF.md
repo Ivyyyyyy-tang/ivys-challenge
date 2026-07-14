@@ -1,18 +1,23 @@
 # Ivy's Challenge Project Handoff
 
+This document is for a brand-new Codex conversation with no prior chat context.
+It reflects the current codebase state in `/Users/apple/Documents/ivy'challenge`.
+
 ## 1. Product Vision
 
 ### Positioning
-Ivy's Challenge is a premium personal English learning space built around calm, focused, desktop-first study. It is not meant to feel like a mass-market gamified app. The product direction is closer to a private study atelier: restrained, elegant, analytical, and highly personal.
+Ivy's Challenge is a premium personal English-learning web app for focused self-study.
+It is not meant to feel like a mass-market vocabulary app, a game, or a noisy productivity dashboard.
+The intended feeling is a private learning studio: calm, elegant, analytical, and highly personal.
 
 ### Design Philosophy
-- Minimalist rather than dense.
+- Clean, restrained, desktop-first presentation.
+- Minimal rather than crowded.
 - Premium rather than playful.
-- Large whitespace rather than dashboard clutter.
-- Soft beige and warm neutrals rather than bright saturated accents.
-- Elegant typography rather than utilitarian UI text everywhere.
-- Learning actions should feel deliberate and quiet.
-- Visual systems may be expressive, but they must stay refined and non-cartoonish.
+- Editorial typography rather than generic app UI.
+- Warm beige and soft neutral tones rather than bright saturated accents.
+- Large whitespace, quiet motion, deliberate interaction.
+- Visual metaphors are allowed, but they must stay refined and non-cartoonish.
 
 ## 2. Current Completed Features
 
@@ -20,43 +25,44 @@ Ivy's Challenge is a premium personal English learning space built around calm, 
 Implemented.
 
 What exists:
-- Avatar at top-left using `src/assets/system-avatar.jpg`.
+- Top-left avatar using `src/assets/system-avatar.jpg`
 - Personal signature: `See it. Move beyond it.`
-- Real-time clock at top-right in `HH:mm:ss`.
-- Centered subtitle: `PRIVATE ENGLISH LEARNING SPACE`.
-- Centered main title: `Ivy's Challenge`.
-- Single entry button: `Words`.
+- Live clock at top-right
+- Centered subtitle: `PRIVATE ENGLISH LEARNING SPACE`
+- Centered main title: `Ivy's Challenge`
+- Single entry button into the vocabulary system
 
 Primary file:
-- `/Users/apple/Documents/ivy'challenge/src/pages/LandingPage.tsx`
+- `src/pages/LandingPage.tsx`
 
 ### Sidebar
 Implemented.
 
 What exists:
-- Desktop shell layout with left sidebar and right content area.
-- Sidebar items:
+- Desktop shell with left sidebar and right content canvas
+- Sidebar items currently shown:
   - Vocabulary
+  - Vocabulary Garden
   - AI Reading
   - My Vocabulary Bank
-  - AI Review Coach
-- Sidebar item order is draggable.
-- Sidebar width is resizable.
-- Sidebar width and item order persist in `localStorage`.
-- A subtle `Back to Home` link exists near the bottom.
-- `/collocation-system` is no longer a true module; it redirects away.
+- Sidebar order is draggable
+- Sidebar width is resizable
+- Sidebar order and width persist in `localStorage`
+- Bottom utility link back to home
 
 Primary file:
-- `/Users/apple/Documents/ivy'challenge/src/components/AppLayout.tsx`
+- `src/components/AppLayout.tsx`
+
+Important current note:
+- `AI Review Coach` has been removed as a real page and sidebar module.
+- The route `/ai-review-coach` currently redirects to `/vocabulary-library`.
 
 ### Vocabulary Library
 Implemented.
 
 What exists:
-- 22 chapter cards based on imported vocabulary data.
-- Title and top-right lightweight stats:
-  - Today Learned
-  - Today Reviewed
+- 22 chapter cards built from the normalized vocabulary dataset
+- Top-right lightweight progress stats
 - Each chapter card shows:
   - chapter label
   - chapter topic
@@ -64,96 +70,96 @@ What exists:
   - learned words / total words
   - `Word Card` button
   - `Word List` button
-- Grid is desktop-oriented with 4 columns by default, then 5 or 6 on very wide screens.
-- Chapter cards use 16:9 aspect ratio.
+- Desktop-oriented responsive grid
 
 Primary file:
-- `/Users/apple/Documents/ivy'challenge/src/pages/VocabularyLibraryPage.tsx`
+- `src/pages/VocabularyLibraryPage.tsx`
 
 ### Word Card
-Implemented.
+Implemented and actively customized.
 
 What exists:
-- Full focus view for a chapter or personal bank set.
-- Adjustable word font size.
-- Pronunciation + speech button.
-- Part of speech display.
-- Meaning hidden by default, reveal on click.
-- Example sentence.
-- Buttons:
+- Chapter-specific word card mode
+- Personal bank word card mode
+- Adjustable word font size
+- Pronunciation display and audio trigger
+- Meaning hidden by default, reveal on click
+- Example sentence area
+- Word family expandable section
+- Review actions:
   - Known
   - Unsure
   - Unknown
-- Small previous / next navigation.
-- Word Family expandable section.
-- Review buttons auto-advance after 0.5 seconds.
-- Review counts are shown as very small numeric indicators.
-- Last visited word is restored when reopening the same set.
+- Auto-advance after review
+- Last-visited word restore by scope
+- Right-side Q-version companion illustration system tied to latest review action
 
 Primary files:
-- `/Users/apple/Documents/ivy'challenge/src/components/WordCardExperience.tsx`
-- `/Users/apple/Documents/ivy'challenge/src/pages/WordCardModePage.tsx`
-- `/Users/apple/Documents/ivy'challenge/src/pages/PersonalVocabularyBankWordCardPage.tsx`
+- `src/components/WordCardExperience.tsx`
+- `src/pages/WordCardModePage.tsx`
+- `src/pages/PersonalVocabularyBankWordCardPage.tsx`
+- `src/components/WordCardCompanion.tsx`
+
+Important current note:
+- The Q-version companion system has been heavily customized and is still mid-iteration.
+- There are uncommitted asset and presentation changes around transparent cutout illustrations.
 
 ### Word List
 Implemented.
 
 What exists:
-- Shared table-based list view.
+- Shared table-based list mode
 - Columns:
   - Number
   - Word
-  - Phonetic + Audio
+  - Phonetic + audio
   - Meaning
   - Spelling
   - Seven Memory Boxes
-- Word visibility toggle.
-- Meaning visibility toggle.
-- Spelling input is editable inline.
-- Enter submits spelling attempt.
-- Spelling shows `errors / attempts`.
-- Each row shows 7 memory boxes in one line.
-- Single click adds `check`.
-- Double click adds `cross`.
+- Inline spelling input
+- Enter key submits spelling attempt
+- Each row shows seven memory marks
+- Single click applies `check`
+- Double click applies `cross`
 
-Primary file:
-- `/Users/apple/Documents/ivy'challenge/src/components/WordListTable.tsx`
+Primary files:
+- `src/pages/WordListModePage.tsx`
+- `src/components/WordListTable.tsx`
 
 ### AI Reading
-Implemented, but one interaction still needs verification.
+Implemented.
 
 What exists:
-- Title and top-right reading stats.
-- Selected learned-word sets.
-- Generated article variants using learned words plus a small unknown-word layer.
-- Reading font size controls.
-- Translation toggle.
-- Collapsible `Today's Reading Card`, default collapsed.
-- Single click a word to inspect it in Word Insight.
-- Double click intended to add unknown words into My Vocabulary Bank.
-- Word Insight panel exists and supports draggable height resizing.
+- Learned-word set selection
+- Article generation from learned words
+- Unknown-word ratio kept around 5% to 10%
+- Translation show/hide
+- Reading font controls
+- Collapsible reading card
+- Single-click word insight
+- Double-click add-to-bank logic
+- Resizable Word Insight panel
 
 Primary file:
-- `/Users/apple/Documents/ivy'challenge/src/pages/AiReadingPage.tsx`
+- `src/pages/AiReadingPage.tsx`
 
-Important status:
-- ivy reported double-click add-to-bank did not work reliably in real use. This is likely the first unfinished behavior to verify.
+Important current note:
+- AI Reading exists, but the double-click add-to-bank interaction previously needed real-user verification.
+- Current code includes both article-level double-click handling and per-word button double-click handling.
 
 ### Personal Vocabulary Bank
 Implemented.
 
 What exists:
-- Dedicated page using the same Word List component as the main vocabulary system.
-- Shared spelling system.
-- Shared seven-box system.
-- Shared Word Card experience.
-- Source metadata shown per word, such as:
-  - AI Reading
-  - Chapter 03
+- Separate page for collected words
+- Reuses the same list system and word-card system
+- Displays source metadata per word
+- Supports memory boxes and spelling progress like the main vocabulary system
 
 Primary files:
-- `/Users/apple/Documents/ivy'challenge/src/pages/PersonalVocabularyBankPage.tsx`
-- `/Users/apple/Documents/ivy'challenge/src/data/personalVocabulary.ts`
+- `src/pages/PersonalVocabularyBankPage.tsx`
+- `src/pages/PersonalVocabularyBankWordCardPage.tsx`
+- `src/data/personalVocabulary.ts`
 
 ## 3. Current Architecture
 
@@ -162,76 +168,79 @@ Primary files:
 - TypeScript
 - Tailwind CSS
 - `react-router-dom`
-
-### Route Structure
-Defined in:
-- `/Users/apple/Documents/ivy'challenge/src/App.tsx`
-
-Current routes:
-- `/` → Landing Page
-- `/vocabulary-library`
-- `/vocabulary-library/chapter/:chapterId/word-card`
-- `/vocabulary-library/chapter/:chapterId/word-list`
-- `/ai-reading`
-- `/personal-vocabulary-bank`
-- `/personal-vocabulary-bank/word-card`
-- `/collocation-system` → redirect to `/vocabulary-library`
-- `/ai-review-coach`
+- Vite
 
 ### Database Structure
-There is no backend database yet.
+There is no backend database.
 
 Current storage model:
-- Raw vocabulary dataset lives in `src/data/vocabulary.json`.
-- It is normalized into runtime objects in `src/data/vocabulary.ts`.
-- User progress and personal-vocabulary entries persist in browser `localStorage`.
+- Source vocabulary content: `src/data/vocabulary.json`
+- Normalized runtime model: `src/data/vocabulary.ts`
+- Runtime progress persistence: browser `localStorage`
+- Personal vocabulary persistence: browser `localStorage`
 
-Local storage keys used now:
+Local storage keys:
 - `ivys-challenge.vocabulary-progress`
 - `ivys-challenge.personal-vocabulary`
 - `ivys-challenge.sidebar-width`
 - `ivys-challenge.sidebar-order`
 - `ivy-word-card-last-word:<scope>`
 
-### Components
-
-Major reusable components:
-- `AppLayout`
-  - desktop shell
+### Major Components
+- `src/components/AppLayout.tsx`
+  - application shell
   - sidebar
   - frame ratio
-- `WordCardExperience`
-  - the shared word-card engine
-- `WordListTable`
-  - the shared list engine
-- `PageShell`
-  - exists in codebase, but not central to this handoff
+  - focus-mode layout behavior
+- `src/components/WordCardExperience.tsx`
+  - shared word card engine
+- `src/components/WordCardCompanion.tsx`
+  - right-side Q-version illustration and bubble text
+- `src/components/WordListTable.tsx`
+  - shared word-list engine
+- `src/components/VocabularyGardenChapterCard.tsx`
+  - chapter-level garden visualization
 
 ### Data Flow
-Core data flow is:
-
-1. Raw vocabulary is imported from JSON.
-2. `src/data/vocabulary.ts` converts it into normalized `VocabularyWord` records and chapter definitions.
+1. Raw vocabulary is imported from `src/data/vocabulary.json`.
+2. `src/data/vocabulary.ts` normalizes it into `VocabularyWord` records.
 3. `VocabularyContext` merges:
    - base vocabulary data
    - persisted progress state
    - personal vocabulary entries
-4. Pages consume `useVocabulary()`.
-5. All review actions, spelling actions, memory-box actions, and personal-word additions are written back through the same context.
+4. Pages read state through `useVocabulary()`.
+5. Review actions, memory-box updates, spelling attempts, and personal-bank additions all write back through `VocabularyContext`.
 
-This means the app already behaves like a client-side single source of truth.
+This is currently a client-side single-source-of-truth architecture.
 
 ## 4. Vocabulary Data Model
 
-Main runtime type:
-- `VocabularyWord`
-
 Defined in:
-- `/Users/apple/Documents/ivy'challenge/src/data/vocabulary.ts`
+- `src/data/vocabulary.ts`
 
-Current fields:
+### Core Types
 
 ```ts
+type MemoryBoxes = [
+  boolean,
+  boolean,
+  boolean,
+  boolean,
+  boolean,
+  boolean,
+  boolean
+];
+
+type SpellingStats = {
+  attempts: number;
+  correct: number;
+  errors: number;
+};
+
+type MemoryMark = 'empty' | 'check' | 'cross';
+
+type WordAction = 'known' | 'unsure' | 'unknown';
+
 type VocabularyWord = {
   id: string;
   chapter: number;
@@ -243,392 +252,366 @@ type VocabularyWord = {
   example: string;
   word_family: string[];
   collocations: string[];
-  memory: [
-    boolean,
-    boolean,
-    boolean,
-    boolean,
-    boolean,
-    boolean,
-    boolean
-  ];
-  spelling: {
-    attempts: number;
-    correct: number;
-    errors: number;
-  };
-  memoryMarks: Array<'empty' | 'check' | 'cross'>;
-  memoryHistory: Array<Array<'empty' | 'check' | 'cross'>>;
-  lastReviewAction?: 'known' | 'unsure' | 'unknown';
+  memory: MemoryBoxes;
+  spelling: SpellingStats;
+  memoryMarks: MemoryMark[];
+  memoryHistory: MemoryMark[][];
+  lastReviewAction?: WordAction;
 };
 ```
 
-Related chapter summary type:
+### Persisted Progress Model
 
 ```ts
-type VocabularyChapterSummary = {
-  chapter: number;
-  chapterLabel: string;
-  topic: string;
-  learnedWords: number;
-  totalWords: number;
-  progress: number;
+type PersistedWordState = {
+  memory: MemoryBoxes;
+  spelling: SpellingStats;
+  memoryMarks: MemoryMark[];
+  memoryHistory: MemoryMark[][];
+  lastReviewAction?: WordAction;
 };
 ```
 
-Personal vocabulary entry type:
+### Personal Vocabulary Model
+
+Defined in:
+- `src/data/personalVocabulary.ts`
 
 ```ts
+type PersonalVocabularySource = {
+  label: string;
+  detail: string;
+  dateAdded: string;
+};
+
 type PersonalVocabularyEntry = {
   id: string;
-  source: {
-    label: string;
-    detail: string;
-    dateAdded: string;
-  };
+  source: PersonalVocabularySource;
   wordId?: string;
   customWord?: VocabularyWord;
 };
 ```
 
-Purpose of `customWord`:
-- Allows AI Reading to add words that are not already present in the main vocabulary database.
-
 ## 5. Memory Box System
 
-## Overview
-The app currently uses two connected representations:
-
-1. `memory`
-   - seven booleans
-   - compact learned-state representation
-
-2. `memoryMarks`
-   - seven explicit box marks
-   - each mark is `empty`, `check`, or `cross`
-
-`memoryMarks` drives the visible seven-box UI.
-
-### Initial State
-
-```ts
-memory = [false, false, false, false, false, false, false]
-memoryMarks = ['empty', 'empty', 'empty', 'empty', 'empty', 'empty', 'empty']
-spelling = {
-  attempts: 0,
-  correct: 0,
-  errors: 0
-}
-```
+Current logic exists in:
+- `src/context/VocabularyContext.tsx`
+- `src/components/WordListTable.tsx`
+- `src/components/WordCardExperience.tsx`
 
 ### 7 Boxes Logic
-Each word visually has 7 boxes in Word List mode.
+There are two related representations:
 
-Current meaning of a box:
-- `check` means positive success for that slot.
-- `cross` means failure for that slot.
-- `empty` means unused.
+1. `memory`
+- fixed-length boolean tuple of 7 boxes
+- each `true` represents a filled box
 
-The visible boxes are updated by `setMemoryMark()` in:
-- `/Users/apple/Documents/ivy'challenge/src/context/VocabularyContext.tsx`
+2. `memoryMarks`
+- visual/action-oriented list of 7 marks
+- each slot is:
+  - `empty`
+  - `check`
+  - `cross`
+
+`memoryMarks` is the more detailed interaction layer.
+`memory` is derived from marks in list-mode flows and directly updated in word-card review flows.
 
 ### Check / Cross Rules
-- Single click on a box → set that box to `check`
-- Double click on a box → set that box to `cross`
 
-When a mark is written:
-- spelling attempts increase by 1
-- `check` also increments spelling `correct`
-- `cross` also increments spelling `errors`
+#### In Word List Mode
+- Single click on a box writes `check`
+- Double click on a box writes `cross`
+- Every click/double-click also updates spelling stats:
+  - `check` increments `attempts` and `correct`
+  - `cross` increments `attempts` and `errors`
+
+#### In Word Card Mode
+- `Known`
+  - fills the next unfilled memory box
+  - increments `attempts`
+  - increments `correct`
+  - writes `check` into the next empty `memoryMarks` slot
+- `Unsure`
+  - removes the most recent filled memory box if one exists
+  - increments `attempts`
+  - does not increment `correct`
+  - does not increment `errors`
+  - does not add a cross mark
+- `Unknown`
+  - resets all 7 memory boxes to empty
+  - increments `attempts`
+  - increments `errors`
+  - resets `memoryMarks` to all `empty`
 
 ### Reset Rules
-Current reset condition:
-- after 7 completed marks
-- if total crosses are greater than 4
 
-Then:
-1. The current 7-mark row is pushed into `memoryHistory`
-2. `memoryMarks` reset to all `empty`
-3. `memory` becomes the boolean projection of the reset marks
+#### Word Card reset
+- Trigger: `Unknown`
+- Effect:
+  - all 7 `memory` boxes reset to `false`
+  - all `memoryMarks` reset to `empty`
 
-In other words:
-- a difficult round can be recorded historically
-- the visible boxes restart for another pass
+#### Word List reset
+- Trigger:
+  - if 7 marks are completed and more than 4 of them are `cross`
+- Effect:
+  - current `memoryMarks` snapshot is pushed into `memoryHistory`
+  - current marks are reset to seven `empty`
+  - `memory` becomes the derived empty state
 
 ### Mastered Word Review Rules
-There is no separate fully mature spaced-repetition engine yet.
+There is no separate spaced-repetition calendar yet.
 
-Current practical mastered logic:
-- A word is treated as "learned" in summary views when `memory.some(Boolean)` is true.
-- Chapter progress counts words whose memory array contains at least one `true`.
-- Word Card review counts accumulate through:
-  - `spelling.correct`
-  - `spelling.errors`
-  - derived unsure count
-- Reopening Word Card does not preserve button highlight, only the historical numeric counters.
+Current mastered behavior is:
+- a word with all or most boxes filled remains in the same vocabulary pool
+- it can still be reviewed again through card/list use
+- Vocabulary Garden interprets stronger review history as more mature growth
 
-Important limitation:
-- The system tracks review evidence, but it does not yet implement a final "mastered and scheduled for later review" rule set.
+In other words:
+- mastered-word tracking exists implicitly through `memory`, `memoryMarks`, `spelling`, and `memoryHistory`
+- there is not yet an independent review scheduler for mastered words
 
 ## 6. AI Reading Logic
 
-Primary file:
-- `/Users/apple/Documents/ivy'challenge/src/pages/AiReadingPage.tsx`
+Current logic exists in:
+- `src/pages/AiReadingPage.tsx`
 
 ### Selected Words
-The reading module builds a learned-word pool first.
-
-Current selection logic:
-1. Prefer words where `word.memory.some(Boolean)` is true and the word is a single lexical token.
-2. If there are fewer than 10 learned single-word entries, fall back to additional single-word items from the wider vocabulary set.
-3. The page uses a rotating set of 12 learned words at a time.
-4. `Next Word Set` advances to the next 12-word slice.
+- `learnedWordPool` is built from words whose `memory.some(Boolean)` is true and whose word form is a single token
+- if learned words are fewer than 10, the system falls back to a broader single-word pool
+- `learnedWords` selects a rolling set of 12 words using `setIndex`
 
 ### Unknown Word Ratio
-Current target behavior:
-- Unknown words should remain low and controlled.
-- UI messaging says unknown words stay between five and ten percent.
-
-Current implementation:
-- A separate unknown-word pool is made from words that are not learned and are not already inside the learned set.
-- The article generator injects up to 6 unknown words into the reading variants.
-- The page computes `unknownRatio` from actual reading segments and displays it in the top-right statistics.
-
-Important note:
-- The displayed ratio depends on the generated reading segments, not on a fixed hard-coded number.
+- `unknownWordPool` is built from words that have not started learning: `!word.memory.some(Boolean)`
+- it excludes already selected learned words
+- `unknownWords` selects up to 6 from that pool based on `articleVariant`
+- the article generator mixes learned and unknown words
+- `unknownRatio` is calculated from article segments and displayed as a percentage
+- the UI copy states the intended unknown range is 5% to 10%
 
 ### Translation Behavior
-Current translation behavior:
-- Translation is hidden by default.
-- `Show Translation` toggles it on.
-- When visible, translation appears below the English article within the same article area.
-
-Recent design expectation from ivy:
-- English正文 and translation must stay inside the same reading frame.
-- The reading frame should scroll vertically if content exceeds height.
+- `translationVisible` toggles whether translation paragraphs are rendered
+- translation content is generated by `getTranslationParagraphs(articleVariant)`
+- translation is hidden by default and shown on demand
 
 ### Word Interaction
-Current intended interactions:
-- Single click a vocabulary word in the article:
-  - opens that word in Word Insight
-  - shows word, phonetic, part of speech, meaning
-- Double click a vocabulary word in the article:
-  - should add the word to My Vocabulary Bank
-- Double click selected article text:
-  - attempts to normalize the selected text
-  - if it matches a known word, add that word
-  - otherwise create a `customWord` entry and add it to the personal bank
 
-Current unresolved issue:
-- ivy tested double click and reported that it only selected text rather than reliably adding to My Vocabulary Bank.
-- This needs direct browser verification and likely event-handling adjustment.
+#### Single click
+- clicking a word segment with a bound `VocabularyWord` sets `selectedWord`
+- `Word Insight` shows:
+  - word
+  - phonetic
+  - audio button
+  - part of speech
+  - meaning
 
-### Reading Card Behavior
-- `Today's Reading Card` exists.
-- It defaults to collapsed.
-- When collapsed, it becomes a compact control strip.
-- When expanded, it shows:
-  - descriptive title
-  - selected word chips
-  - article controls
+#### Double click
+There are two paths:
 
-### Word Insight Behavior
-- Displays current inspected word.
-- Height is resizable vertically by mouse drag.
-- Reading area visually adapts because the page is stacked vertically.
+1. Double click on a bound article word button
+- handled inside the mapped word button
+- directly calls `handleAddUnknownWord(segment.word)`
+
+2. Double click on selected plain text or a non-bound reading word
+- handled at article container level
+- uses selected browser text or `data-reading-word`
+- normalizes text
+- if a known vocabulary entry matches, adds that word
+- otherwise creates a `customWord`
+
+#### Add to personal bank
+- uses `addPersonalVocabularyWord`
+- source metadata is:
+  - `label: 'AI Reading'`
+  - `detail: "Today's Reading"`
+  - current date
 
 ## 7. Current UI Design Rules
 
-## Colors
-Global palette is warm and neutral.
+### Colors
+Defined mainly in:
+- `tailwind.config.ts`
+- `src/styles.css`
 
-Core tones from `src/styles.css` and current Tailwind usage:
-- background beige: `#f5f0e8`
-- lighter panel whites with translucent warm overlays
-- dark ink text around `#201a15`
-- line / border tones in soft taupe-beige range
+Core colors:
+- `sand: #F5F0E8`
+- `ink: #201A15`
+- `taupe: #76695D`
+- `line: #DED2C5`
+- `panel: rgba(255,255,255,0.72)`
 
-Visual behavior:
-- warm beige page background
-- white or milk-glass panels
-- soft borders
-- restrained shadows
-- almost no bright accent colors
+Global background:
+- warm layered beige gradient in `src/styles.css`
+
+Panel treatment:
+- thin warm borders
+- translucent white/beige panel surfaces
+- soft card shadow
 
 ### Typography
-- Global font stack uses `"Avenir Next", "Helvetica Neue", sans-serif`
-- Display headlines use `font-display` from the project setup
-- Uppercase micro-labels use wide letter spacing
-- Large titles rely on refined serif-like display treatment
+- Display font stack:
+  - `Iowan Old Style`
+  - `Palatino Linotype`
+  - `serif`
+- Body font stack:
+  - `Avenir Next`
+  - `Helvetica Neue`
+  - `sans-serif`
 
-Typography rules already visible in the app:
-- major titles are large and elegant
-- supporting labels are tiny uppercase with tracking
-- body text is quiet and well-spaced
+Use pattern:
+- large serif headlines
+- light uppercase metadata labels with wide tracking
+- restrained body text with soft taupe color
 
 ### Spacing
-- Large whitespace is intentional.
-- Sections typically use generous padding and large vertical gaps.
-- Cards are separated with visible breathing room.
-- Dense micro-panels or crowded dashboards are not aligned with the current direction.
+- generous whitespace is intentional
+- desktop frame uses a fixed large presentation canvas
+- common section gaps are wide (`gap-8`, `gap-10`)
+- cards and shell use roomy internal padding
 
 ### Sidebar Behavior
-- Desktop shell only; sidebar is always part of the main system frame.
-- Sidebar width:
-  - default 240px
-  - minimum 180px
-  - maximum 400px
-- Actual restored width is clamped on load.
-- Sidebar order is draggable and persisted.
-- Active item becomes dark.
-- Menu card blocks remain airy and premium, not compressed.
-
-### System Frame
-- App shell uses a fixed visual frame ratio:
-  - `18 / 12`
-- This is set in `AppLayout.tsx`.
-- The shell is centered on the beige background.
+- draggable item ordering
+- resizable width
+- width persisted in local storage
+- order persisted in local storage
+- not mobile-first; optimized around a desktop framed shell
 
 ### Cursor
-Current status:
-- A custom rabbit cursor is wired only inside `.system-shell`.
-- The current active implementation uses a temporary SVG asset:
-  - `/Users/apple/Documents/ivy'challenge/src/assets/rabbit-cursor.svg`
+Current CSS state:
+- rabbit cursor is only applied under `.system-shell, .system-shell *`
+- that means it is not yet guaranteed across the entire system, especially focus-mode and landing views
 
-Important unresolved design issue:
-- The user explicitly rejected this SVG because it is not their original rabbit image.
-- The intended final cursor must use the user's original rabbit image with all background outside the rabbit silhouette removed.
+File:
+- `src/styles.css`
 
 ## 8. Pending Tasks
 
-## High Priority Pending Tasks
+### Highest Priority Documentation / Continuation Reality
+The app has many uncommitted UI changes in working tree.
+Before any new development, a new Codex should inspect current `git status` and verify which visual changes are intentional.
 
-### A. Fix AI Reading Unknown-Word Collection
-Status:
-- partially implemented
-- user-reported behavior mismatch
+### Vocabulary Garden
+Status: partially implemented, not finished.
 
-Needed:
-- verify double-click interaction in real browser
-- ensure words are actually added to Personal Vocabulary Bank
-- make interaction robust against ordinary text selection behavior
+What already exists:
+- sidebar entry
+- route
+- dedicated page
+- chapter-level garden summaries
+- global stage summaries
+- custom stage icons
+- chapter dot/growth visualization
+- growth calculation layer in `src/data/vocabularyGarden.ts`
 
-### B. Replace Temporary Rabbit Cursor
-Status:
-- unresolved
+What is still incomplete:
+- final visual polish
+- final interaction design
+- alignment with the product spec as a finished module
+- possible cleanup of current intermediate UI decisions
 
-Needed:
-- use the original rabbit image supplied by ivy
-- remove background correctly
-- avoid mosaic/checkerboard artifacts
-- avoid replacing it with a redrawn icon
+### AI Personal Teacher
+Status: not implemented.
 
-### C. Vocabulary Garden
-Status:
-- not started
+Current nearest concept:
+- no real AI Personal Teacher page exists
+- previous `AI Review Coach` page has been removed from active product flow
+- `/ai-review-coach` currently redirects away
 
-User request summary:
-- add new sidebar item: `Vocabulary Garden`
-- sidebar order must remain draggable
-- this is a visualization layer only
-- do not change:
-  - Vocabulary Library
-  - Word Card
-  - Word List
-  - Memory Box logic
-- group words by chapter
-- show vocabulary growth as refined plant-like visual forms
-- each word should express:
-  - word name
-  - growth stage
-  - learning status
-- style must stay premium, minimalist, elegant, and non-cartoonish
+Future work should define:
+- teacher persona
+- coaching logic
+- study recommendations
+- integration with vocabulary / reading / review signals
 
-This module should read existing vocabulary data rather than create a new progress model.
+### Q-version Companion Cleanup
+Status: partially implemented, still in iteration.
 
-### D. AI Personal Teacher
-Status:
-- not implemented
+Current reality:
+- review-state-based illustrations and speech bubble text exist
+- custom assets were repeatedly revised
+- current transparent cutout state needs in-browser visual verification after the latest asset replacement
 
-Interpretation:
-- The user explicitly called out future pending work around an "AI Personal Teacher".
-- The current AI Review Coach is a behavior-analysis dashboard, not a fully interactive personal teacher.
+### Rabbit Cursor Rollout
+Status: incomplete.
 
-Likely future direction:
-- actionable daily guidance
-- personalized review planning
-- learning-priority suggestions
-- chapter/skill targeting
-- deeper integration with reading, review, and weak-word data
+Current reality:
+- rabbit cursor asset exists: `src/assets/rabbit-cursor-user.png`
+- CSS applies cursor only inside `.system-shell`
+- landing page and focus-mode pages may not fully inherit it
+- user explicitly wanted the rabbit cursor across the whole system
 
-## Secondary Pending Tasks
-- Complete verification of AI Reading translation layout after future modifications.
-- Review whether AI Review Coach copy or panel density needs further tightening.
-- Decide whether any unfinished chapter-specific enrichment data is still needed in vocabulary display or AI Reading word pools.
+### Build / Sync / Cleanup
+Status: not done.
+
+Current reality:
+- working tree has many modified and untracked files
+- nothing in this state has been documented as pushed to GitHub
+- before syncing, a new Codex should:
+  - inspect changes
+  - verify build
+  - remove accidental artifacts if any
+  - then commit intentionally
 
 ## 9. How a New Codex Conversation Should Continue
 
-When starting a new Codex conversation, the new assistant should:
+### Required first step
+In a new conversation, the next Codex should:
+1. read `AGENTS.md`
+2. read `HANDOFF.md`
+3. read `DECISIONS.md`
+4. read `PROJECT_HANDOFF.md`
 
-1. Read these files first:
-   - `/Users/apple/Documents/ivy'challenge/AGENTS.md`
-   - `/Users/apple/Documents/ivy'challenge/HANDOFF.md`
-   - `/Users/apple/Documents/ivy'challenge/DECISIONS.md`
-   - `/Users/apple/Documents/ivy'challenge/PROJECT_HANDOFF.md`
+### Then do this
+- do not restate full history
+- summarize current state in a few sentences
+- compare docs with current code reality
+- inspect `git status`
+- continue from the highest-priority unfinished task the user chooses
 
-2. Do not reconstruct the entire project from chat history.
+### Recommended first verification checklist
+- `git status --short`
+- inspect `src/components/WordCardCompanion.tsx`
+- inspect `src/styles.css`
+- inspect `src/pages/VocabularyGardenPage.tsx`
+- inspect `src/data/vocabularyGarden.ts`
+- run:
+  - `./node_modules/.bin/tsc --noEmit`
+  - `./node_modules/.bin/vite build`
 
-3. Treat the codebase as the final source of truth if any document and code differ.
-
-4. First verify the top unfinished priority the user wants at that moment.
-
-5. Make targeted changes only; avoid broad unrelated rewrites.
-
-## Recommended Immediate Next Checks for a New Codex
-
-If the user says "continue this project", the safest first action is:
-
-1. inspect:
-   - `/Users/apple/Documents/ivy'challenge/src/pages/AiReadingPage.tsx`
-   - `/Users/apple/Documents/ivy'challenge/src/context/VocabularyContext.tsx`
-   - `/Users/apple/Documents/ivy'challenge/src/data/personalVocabulary.ts`
-2. run the app
-3. verify whether double-click in AI Reading actually writes into My Vocabulary Bank
-4. only then move to the next requested unfinished feature
-
-## Suggested Resume Prompt For a New Codex Conversation
-
-ivy can paste this:
+### Best prompt for a new Codex conversation
+Use this exact message:
 
 ```text
-继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md，不要复述整个历史。先按 HANDOFF.md 里的 Next Action 开始，先检查 AI Reading 双击加入 My Vocabulary Bank 为什么没有稳定生效，再继续处理未完成项。
+继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md，不要复述整个历史。先检查当前代码和交接文档是否一致，再告诉我当前未完成事项，并从最优先的一项开始继续。
 ```
 
-If ivy wants to start from Vocabulary Garden instead, use:
+### If you want to force a specific next task
+Use one of these:
 
 ```text
-继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md。不要复述整个历史。跳过旧聊天，直接基于当前代码实现 Vocabulary Garden，保持现有 Vocabulary Library、Word Card、Word List、Memory Box 逻辑不变。
+继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md。不要复述整个历史。先检查当前代码和交接文档是否一致。然后优先处理：1）兔子 cursor 全系统应用，或 2）Vocabulary Garden 收尾，或 3）Word Card 右侧插画系统清理。
 ```
 
-If ivy wants to start from the cursor issue instead, use:
+## 10. Current Working Tree Reality
 
-```text
-继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md。不要复述整个历史。先修复系统页兔子 cursor：必须使用我原始提供的兔子图片，不要重画，只保留兔子轮廓，去掉轮廓外全部背景。
-```
+At the time of this handoff, the working tree includes many uncommitted changes, including:
+- `src/App.tsx`
+- `src/components/AppLayout.tsx`
+- `src/components/WordCardExperience.tsx`
+- `src/components/WordCardCompanion.tsx`
+- `src/pages/AiReadingPage.tsx`
+- `src/pages/PersonalVocabularyBankPage.tsx`
+- `src/pages/PersonalVocabularyBankWordCardPage.tsx`
+- `src/pages/VocabularyGardenPage.tsx`
+- `src/pages/WordCardModePage.tsx`
+- `src/pages/WordListModePage.tsx`
+- `src/styles.css`
+- garden assets
+- word-card illustration assets
+- `src/data/vocabularyGarden.ts`
+- `src/utils/`
 
-## Final Status Snapshot
+Also:
+- `src/pages/AiReviewCoachPage.tsx` is deleted
 
-The project is already well beyond scaffold stage. The main learning loop is present:
-- landing entry
-- chapter library
-- word card review
-- word list review
-- AI reading
-- personal vocabulary collection
-- review analytics
-
-The remaining work is now mostly about:
-- polishing edge interactions
-- resolving the cursor asset issue
-- adding the next modules such as Vocabulary Garden and future personal-teacher capabilities
-
+New Codex should not assume the current state has been committed or pushed.

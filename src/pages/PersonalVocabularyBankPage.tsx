@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { WordListTable } from '../components/WordListTable';
 import { useVocabulary } from '../context/VocabularyContext';
+import { speakWord } from '../utils/speech';
 
 export function PersonalVocabularyBankPage() {
   const navigate = useNavigate();
@@ -8,10 +9,7 @@ export function PersonalVocabularyBankPage() {
   const items = getPersonalVocabularyWords();
 
   const handleSpeak = (word: string) => {
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-US';
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    speakWord(word);
   };
 
   return (

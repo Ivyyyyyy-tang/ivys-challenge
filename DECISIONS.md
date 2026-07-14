@@ -1,45 +1,83 @@
 # Confirmed Technical Decisions
-- Frontend stack is React + TypeScript + Tailwind CSS.
-- Routing is handled with `react-router-dom`.
-- Vocabulary state is centralized in a React context (`VocabularyContext`) and persisted in browser `localStorage`.
-- The raw vocabulary source is `src/data/vocabulary.json`, normalized by `src/data/vocabulary.ts`, and treated as the single source of truth for the main vocabulary database.
-- Word Card mode and Word List mode must read from the same vocabulary state rather than duplicate data.
-- Personal Vocabulary Bank reuses the existing Word List and Word Card experience instead of introducing a separate interaction system.
-- Collocation content is represented through `word_family` display inside Word Card rather than a standalone learning module.
-- The app shell uses a fixed desktop presentation frame with `18 / 12` aspect ratio.
+- Frontend stack is React + TypeScript + Tailwind CSS + Vite.
+- Routing uses `react-router-dom`.
+- Core vocabulary state is centralized in `src/context/VocabularyContext.tsx`.
+- Raw vocabulary source remains `src/data/vocabulary.json`.
+- Runtime-normalized vocabulary model remains `src/data/vocabulary.ts`.
+- User progress and personal vocabulary persist in browser `localStorage`.
+- Word Card, Word List, AI Reading, Personal Vocabulary Bank, and Vocabulary Garden all read from the same shared vocabulary state.
+- Vocabulary Garden is a visualization/calculation layer built on top of existing learning data, not a separate learning system.
 
 # Explicitly Not Adopted
-- No separate backend database has been introduced.
-- No complex learning algorithm or server-driven personalization has been added yet.
-- No standalone Collocation System page should remain as a real destination; `/collocation-system` currently redirects to `/vocabulary-library`.
-- No cartoonified or game-like UI layer should be used for learning views, even when adding visualizations.
+- No backend database.
+- No server-side user model.
+- No separate spaced-repetition scheduler beyond the current client-side memory and spelling logic.
+- No standalone active `AI Review Coach` page in current product flow.
+- No standalone active `Collocation System` page in current product flow.
+- No cartoonish or game-heavy visual language for the main learning surfaces.
 
-# Key Constraints
-- Maintain Ivy's Challenge style: minimalist, premium, soft beige palette, large whitespace, elegant typography.
-- Default output and future collaboration should stay concise.
-- Avoid unrelated expansion; each round should focus on the user's current target.
-- Long-term project memory must live in `AGENTS.md`, `HANDOFF.md`, and `DECISIONS.md`.
-- Do not re-architect existing Vocabulary Library, Word Card, Word List, or Memory Box logic when adding new visualization modules such as Vocabulary Garden.
+# Current Product / Routing Decisions
+- Active sidebar modules are:
+  - Vocabulary
+  - Vocabulary Garden
+  - AI Reading
+  - My Vocabulary Bank
+- `/collocation-system` redirects to `/vocabulary-library`.
+- `/ai-review-coach` redirects to `/vocabulary-library`.
+- Landing page and focus-mode pages use the shared framed shell but different layout behavior from the dashboard pages.
 
-# Naming / Directory / Interface Conventions
-- Page components live under `src/pages`.
-- Shared UI components live under `src/components`.
-- Shared data definitions live under `src/data`.
-- Shared state and persistence logic live under `src/context`.
-- Chapter routes use `/vocabulary-library/chapter/:chapterId/...`.
-- Personal vocabulary routes use `/personal-vocabulary-bank/...`.
-- AI Review Coach title should use straight apostrophe form: `Ivy's AI Coach`.
+# Learning Logic Decisions
+- `Known` in Word Card fills the next empty memory box.
+- `Unsure` removes the most recent filled memory box when possible.
+- `Unknown` resets all seven memory boxes.
+- Word List memory marks use:
+  - single click = `check`
+  - double click = `cross`
+- If all 7 marks are filled and more than 4 are `cross`, the mark row resets and the old row is archived into `memoryHistory`.
+- Spelling attempts are tracked separately from memory-box filling.
 
-# UI / Interaction Conventions
-- Sidebar width persists in local storage and remains user-resizable and draggable in item order.
-- Vocabulary Library chapter cards use 16:9 ratio and multi-column desktop layout.
-- Word Card review buttons auto-advance after 0.5 seconds and should not retain highlight state across reopen; only counts persist.
-- Word Card should reopen at the last word visited within the same scope.
-- Word List spelling submission happens via Enter key, not a submit button.
-- AI Reading supports single-click inspect and double-click add-to-bank behavior.
-- AI Reading's "Today's Reading Card" defaults to collapsed.
+# Data Model Decisions
+- `VocabularyWord` includes:
+  - lexical fields
+  - memory tuple
+  - spelling stats
+  - `memoryMarks`
+  - `memoryHistory`
+  - `lastReviewAction`
+- Personal vocabulary entries may point to an existing `wordId` or store a `customWord`.
 
-# Unfinished but Accepted Direction
-- Add `Vocabulary Garden` as a new sidebar module and visualization-only layer over existing vocabulary data.
-- Add a future `AI Personal Teacher` style module; current `AI Review Coach` is analytics-focused but not the final personal-teacher experience.
-- Replace the temporary cursor solution with the user's original rabbit image after proper background removal.
+# UI / Style Decisions
+- Design language stays:
+  - clean
+  - minimal
+  - premium
+  - calm
+  - editorial
+- Main palette stays warm neutral:
+  - sand background
+  - ink text
+  - taupe metadata
+  - soft line borders
+- Typography stays:
+  - serif display headings
+  - sans-serif body
+- Desktop-first framed shell with `18 / 12` aspect ratio remains the layout model.
+- Sidebar remains resizable and reorderable.
+
+# Current In-Progress UI Decisions
+- Word Card mode now supports a right-side companion illustration system controlled at page level, not inside the card component.
+- Companion illustrations change by latest review action:
+  - `known`
+  - `unsure`
+  - `unknown`
+- Default no-action state currently renders no companion illustration.
+- Companion illustration assets have gone through several iterations and should be treated as active in-progress work until ivy confirms the final visual result.
+
+# Important Continuation Constraints
+- Before any new development, a new Codex conversation should read:
+  - `AGENTS.md`
+  - `HANDOFF.md`
+  - `DECISIONS.md`
+  - `PROJECT_HANDOFF.md`
+- New Codex should compare docs with current code, not trust old chat history.
+- Do not blindly commit the current working tree without review; it contains many uncommitted UI and asset changes.

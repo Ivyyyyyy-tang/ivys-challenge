@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type VocabularyWord, type WordAction } from '../data/vocabulary';
+import { speakWord } from '../utils/speech';
 
 type WordCardExperienceProps = {
   words: VocabularyWord[];
@@ -7,6 +8,7 @@ type WordCardExperienceProps = {
   persistKey?: string;
   exitLabel?: string;
   onExit: () => void;
+  onPendingReviewActionChange?: (action: WordAction | null) => void;
   onUpdateWordReview: (wordId: string, action: 'known' | 'unsure' | 'unknown') => void;
 };
 
@@ -16,6 +18,7 @@ export function WordCardExperience({
   persistKey,
   exitLabel = 'Exit',
   onExit,
+  onPendingReviewActionChange,
   onUpdateWordReview,
 }: WordCardExperienceProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -51,6 +54,10 @@ export function WordCardExperience({
       }
     };
   }, []);
+
+  useEffect(() => {
+    onPendingReviewActionChange?.(pendingReviewAction);
+  }, [onPendingReviewActionChange, pendingReviewAction]);
 
   useEffect(() => {
     if (words.length === 0) return;
@@ -106,10 +113,7 @@ export function WordCardExperience({
   };
 
   const handleSpeak = () => {
-    const utterance = new SpeechSynthesisUtterance(currentWord.word);
-    utterance.lang = 'en-US';
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    speakWord(currentWord.word);
   };
 
   const handlePreviousWord = () => {

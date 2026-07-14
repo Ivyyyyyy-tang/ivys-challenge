@@ -1,65 +1,58 @@
 # Current Goal
-Build Ivy's Challenge into a premium personal English learning web app with a stable desktop-first shell, shared vocabulary data model, and connected learning modules. The current codebase already supports the main vocabulary workflow and now needs handoff-ready continuation for the unfinished visualization and coaching layers.
+Freeze active development and leave Ivy's Challenge in a handoff-ready state so a brand-new Codex conversation can resume without relying on old chat history. The codebase already contains the main learning flows plus in-progress UI work around Vocabulary Garden, Word Card companion illustrations, and global cursor behavior.
 
 # Current Stage
-Implementation handoff / continuation preparation.
+Documentation / handoff freeze.
 
 # Done
-- Landing page implemented with avatar, signature, live clock, central title, and single entry button.
-- Global desktop shell implemented with adjustable sidebar width, draggable sidebar ordering, persistent layout state, and a subtle back-to-home entry.
-- Vocabulary Library implemented with 22 chapter cards, chapter statistics, routing to Word Card and Word List modes, and responsive multi-column desktop grid.
-- Shared vocabulary database imported from `src/data/vocabulary.json` and normalized through `src/data/vocabulary.ts`.
-- Shared persistence layer implemented in `src/context/VocabularyContext.tsx` using `localStorage` for vocabulary state and personal vocabulary entries.
-- Word Card mode implemented with font resizing, reveal meaning, pronunciation, previous/next navigation, word family panel, review buttons, delayed auto-advance, and last-position restore.
-- Word List mode implemented with hide/show word and meaning, inline spelling input submitted by Enter, and seven memory boxes with single-click / double-click interaction.
-- Personal Vocabulary Bank implemented by reusing the same `WordListTable` component and shared vocabulary state; it also links to its own Word Card mode.
-- AI Reading implemented with selected learned-word sets, generated article variants, collapsible reading card, translation toggle, font scaling, draggable Word Insight height, single-click inspection, and double-click unknown-word collection logic.
-- AI Review Coach implemented with daily report, weak-word detection, seven-box performance, reset counts, spelling accuracy, unknown-word count, and reading performance metrics.
-- Collocation System page effectively removed as a real module by redirecting `/collocation-system` back to `/vocabulary-library`; the related content is now represented inside Word Card word-family display.
+- Landing Page is implemented.
+- Sidebar shell is implemented with draggable ordering and resizable width.
+- Vocabulary Library is implemented.
+- Word Card and Word List flows are implemented.
+- AI Reading is implemented.
+- Personal Vocabulary Bank is implemented.
+- Vocabulary Garden exists as an in-progress module with route, sidebar entry, page, growth calculation layer, and chapter visualization.
+- AI Review Coach page has been removed from active flow; `/ai-review-coach` redirects to `/vocabulary-library`.
+- `PROJECT_HANDOFF.md` has been rewritten as a complete no-context handoff file.
 
 # In Progress
-- Project documentation and memory files are now being established so a fresh Codex conversation can resume without relying on chat history.
-- AI Reading unknown-word collection behavior exists in code but still needs real-user verification in the browser because ivy reported it did not work as expected.
-- Cursor customization is unresolved: the project currently uses a temporary SVG rabbit cursor instead of the user's original cut-out rabbit image.
+- Word Card right-side Q-version companion system is still mid-iteration.
+- Rabbit cursor rollout across the whole system is unfinished.
+- Vocabulary Garden is functional but not finalized.
+- Working tree contains many uncommitted UI and asset changes.
 
 # Blockers
-- The requested rabbit cursor must use the user's original image with a truly transparent background, but current generated assets still have baked-in checkerboard pixels or were replaced with a temporary custom SVG the user rejected.
-- Vocabulary Garden has not been started.
-- "AI Personal Teacher" is not yet implemented; the closest current module is AI Review Coach.
+- None at the infrastructure level.
+- Main practical blocker is uncertainty about which current uncommitted visual iterations should be kept, cleaned, or reverted before syncing to GitHub.
 
 # Key Files
-- `/Users/apple/Documents/ivy'challenge/src/App.tsx`: top-level route map for landing, vocabulary library, word card/list, AI Reading, personal bank, and AI Review Coach.
-- `/Users/apple/Documents/ivy'challenge/src/components/AppLayout.tsx`: desktop shell, sidebar ordering, sidebar resizing, frame ratio, and home navigation.
-- `/Users/apple/Documents/ivy'challenge/src/context/VocabularyContext.tsx`: single shared source of runtime truth, persistence, review updates, spelling updates, memory-box updates, and personal vocabulary mutations.
-- `/Users/apple/Documents/ivy'challenge/src/data/vocabulary.ts`: normalized vocabulary types, chapter definitions, initial states, and supplemental word-family data.
-- `/Users/apple/Documents/ivy'challenge/src/data/vocabulary.json`: imported raw vocabulary dataset.
-- `/Users/apple/Documents/ivy'challenge/src/data/personalVocabulary.ts`: persisted personal vocabulary entry shape and seed entries.
-- `/Users/apple/Documents/ivy'challenge/src/components/WordCardExperience.tsx`: shared word-card interaction engine.
-- `/Users/apple/Documents/ivy'challenge/src/components/WordListTable.tsx`: reused list/table engine for chapter lists and personal bank lists.
-- `/Users/apple/Documents/ivy'challenge/src/pages/AiReadingPage.tsx`: reading article generation, translation toggle, word interaction, and personal-vocabulary collection.
-- `/Users/apple/Documents/ivy'challenge/src/pages/AiReviewCoachPage.tsx`: analytics/coaching page.
-- `/Users/apple/Documents/ivy'challenge/src/styles.css`: global visual rules and current cursor wiring.
-- `/Users/apple/Documents/ivy'challenge/PROJECT_HANDOFF.md`: full detailed project handoff for a new Codex conversation.
+- `AGENTS.md`: collaboration rules and new-conversation protocol.
+- `HANDOFF.md`: short current-state continuation instructions.
+- `DECISIONS.md`: stable decisions and constraints that should not be re-litigated every turn.
+- `PROJECT_HANDOFF.md`: full detailed project handoff for a new Codex conversation.
+- `src/context/VocabularyContext.tsx`: vocabulary persistence, memory logic, spelling logic, and personal bank mutations.
+- `src/pages/AiReadingPage.tsx`: reading generation, translation, word interaction, and add-to-bank behavior.
+- `src/pages/VocabularyGardenPage.tsx`: current Vocabulary Garden UI.
+- `src/data/vocabularyGarden.ts`: garden growth calculation layer.
+- `src/components/WordCardCompanion.tsx`: right-side illustration and bubble system in Word Card mode.
+- `src/styles.css`: global background and current cursor scope.
 
 # How To Continue
 1. Read `AGENTS.md`, `HANDOFF.md`, `DECISIONS.md`, and `PROJECT_HANDOFF.md`.
-2. Verify the codebase against the handoff notes instead of relying on old chat history.
-3. Check the current unfinished item the user wants first; likely one of these:
-   - fix AI Reading double-click add-to-bank behavior
-   - replace the temporary rabbit cursor with the user's original transparent-background rabbit
-   - add the new Vocabulary Garden module
-   - add the future AI Personal Teacher module
-4. Make the smallest targeted change that addresses the current goal, then verify with TypeScript and/or build.
+2. Inspect `git status --short`.
+3. Compare the docs against the real code before making assumptions.
+4. Ask ivy which unfinished stream to resume first if not already specified.
+5. Only after that continue development.
 
 # Next Action
-Open `/Users/apple/Documents/ivy'challenge/src/pages/AiReadingPage.tsx` and `/Users/apple/Documents/ivy'challenge/src/context/VocabularyContext.tsx`, then verify in-browser why double-clicking a word in AI Reading is not reliably adding it to My Vocabulary Bank.
+In a new conversation, read the four memory files first, then inspect `git status --short`, `src/components/WordCardCompanion.tsx`, `src/styles.css`, and `src/pages/VocabularyGardenPage.tsx` to verify that the current visual work matches the handoff notes.
 
 # Run / Verify
-- `npm run dev`
+- `git status --short`
 - `./node_modules/.bin/tsc --noEmit`
 - `./node_modules/.bin/vite build`
 
 # Notes
-- The project is desktop-first and intentionally not optimized around mobile-first interaction patterns.
-- The active cursor asset is currently a temporary compromise and should not be treated as final.
-- The user strongly prefers concise execution and expects new conversations to resume from these files rather than from reconstructed history.
+- The project is desktop-first.
+- The user prefers concise execution, minimal recap, and direct continuation.
+- The best next conversation prompt is already included in `PROJECT_HANDOFF.md`.
