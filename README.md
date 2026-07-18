@@ -132,6 +132,10 @@ The project does not provide shared API quota, hosted AI access, or bundled thir
 
 ![Landing Page](docs/images/landing-page.png)
 
+### Vocabulary Library
+
+![Vocabulary Library](docs/images/vocabulary-library.png)
+
 ### Vocabulary Garden
 
 ![Vocabulary Garden](docs/images/vocabulary-garden.png)
@@ -144,9 +148,9 @@ The project does not provide shared API quota, hosted AI access, or bundled thir
 
 ![My Vocabulary Bank](docs/images/my-vocabulary-bank.png)
 
-### Settings
+### Word List Mode
 
-![Settings](docs/images/settings.png)
+![Word List Mode](docs/images/word-list-mode.png)
 
 ## Demo
 
