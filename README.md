@@ -130,27 +130,27 @@ The project does not provide shared API quota, hosted AI access, or bundled thir
 
 ### Landing Page
 
-![Landing Page](docs/images/landing-page.png)
+![Landing Page](docs/images/landing-page-20260719.png)
 
 ### Vocabulary Library
 
-![Vocabulary Library](docs/images/vocabulary-library.png)
+![Vocabulary Library](docs/images/vocabulary-library-20260719.png)
 
 ### Vocabulary Garden
 
-![Vocabulary Garden](docs/images/vocabulary-garden.png)
+![Vocabulary Garden](docs/images/vocabulary-garden-20260719.png)
 
 ### AI Reading
 
-![AI Reading](docs/images/ai-reading.png)
+![AI Reading](docs/images/ai-reading-20260719.png)
 
 ### My Vocabulary Bank
 
-![My Vocabulary Bank](docs/images/my-vocabulary-bank.png)
+![My Vocabulary Bank](docs/images/my-vocabulary-bank-20260719.png)
 
 ### Word List Mode
 
-![Word List Mode](docs/images/word-list-mode.png)
+![Word List Mode](docs/images/word-list-mode-20260719.png)
 
 ## Demo
 
