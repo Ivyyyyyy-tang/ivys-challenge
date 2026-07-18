@@ -119,6 +119,12 @@ The project does not provide shared API quota, hosted AI access, or bundled thir
 ## Documentation
 
 - [Architecture Guide](docs/ARCHITECTURE.md)
+- [User Guide](docs/USER_GUIDE.md)
+- [Release Checklist](docs/RELEASE_CHECKLIST.md)
+
+## Live Demo
+
+- GitHub Pages: [https://ivyyyyyy-tang.github.io/ivys-challenge/](https://ivyyyyyy-tang.github.io/ivys-challenge/)
 
 ## Development
 
