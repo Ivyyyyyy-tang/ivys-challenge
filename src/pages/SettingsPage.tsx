@@ -117,6 +117,10 @@ export function SettingsPage() {
     window.location.reload();
   };
 
+  const handleOpenFeedback = () => {
+    window.open('https://github.com/Ivyyyyyy-tang/ivys-challenge/issues', '_blank', 'noopener,noreferrer');
+  };
+
   const aiStatus = aiConfig
     ? `${formatAIProviderLabel(aiConfig.provider)} Connected`
     : settings.aiProvider === 'none'
@@ -317,6 +321,26 @@ export function SettingsPage() {
               <p>Your data stays in your browser. Export files do not include API keys.</p>
             </div>
             {dataMessage ? <p className="text-sm leading-7 text-taupe">{dataMessage}</p> : null}
+          </div>
+        </SettingCard>
+
+        <SettingCard
+          eyebrow="Feedback"
+          title="Report Issues or Share Ideas"
+          description="Open the GitHub Issues page to report bugs, suggest improvements, or share product feedback."
+          statusLabel="GitHub Issues"
+        >
+          <div className="space-y-6">
+            <button
+              type="button"
+              onClick={handleOpenFeedback}
+              className="border border-ink bg-ink px-4 py-3 text-[11px] uppercase tracking-[0.22em] text-sand transition-colors hover:bg-sand hover:text-ink"
+            >
+              Open Feedback Page
+            </button>
+            <div className="border border-line/70 bg-sand/32 px-4 py-4 text-sm leading-7 text-taupe">
+              <p>Use GitHub Issues for bug reports, feature requests, and product feedback.</p>
+            </div>
           </div>
         </SettingCard>
       </div>

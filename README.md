@@ -126,6 +126,48 @@ The project does not provide shared API quota, hosted AI access, or bundled thir
 
 - GitHub Pages: [https://ivyyyyyy-tang.github.io/ivys-challenge/](https://ivyyyyyy-tang.github.io/ivys-challenge/)
 
+## Screenshots
+
+### Landing Page
+
+![Landing Page](docs/images/landing-page.png)
+
+### Vocabulary Garden
+
+![Vocabulary Garden](docs/images/vocabulary-garden.png)
+
+### AI Reading
+
+![AI Reading](docs/images/ai-reading.png)
+
+### My Vocabulary Bank
+
+![My Vocabulary Bank](docs/images/my-vocabulary-bank.png)
+
+### Settings
+
+![Settings](docs/images/settings.png)
+
+## Demo
+
+![Demo Walkthrough](docs/demo.gif)
+
+The repository currently keeps a lightweight `docs/demo.gif` placeholder plus the full captured step frames in `docs/images/demo-frames/`.
+
+If you want to regenerate the demo later, capture the flow in this order:
+
+1. Open the site
+2. Enter Vocabulary
+3. Add a word to My Vocabulary Bank
+4. Open Vocabulary Garden
+5. Use AI Reading
+
+This repository keeps the demo asset path at `docs/demo.gif`.
+
+## Feedback
+
+- GitHub Issues: [https://github.com/Ivyyyyyy-tang/ivys-challenge/issues](https://github.com/Ivyyyyyy-tang/ivys-challenge/issues)
+
 ## Development
 
 Common development commands:
