@@ -19,6 +19,7 @@ const dashboardNavigation: NavigationItem[] = [
   { id: 'vocabulary-garden', to: '/vocabulary-garden', label: 'Vocabulary Garden' },
   { id: 'ai-reading', to: '/ai-reading', label: 'AI Reading' },
   { id: 'my-vocabulary-bank', to: '/personal-vocabulary-bank', label: 'My Vocabulary Bank' },
+  { id: 'settings', to: '/settings', label: 'Settings' },
 ];
 
 export function AppLayout() {

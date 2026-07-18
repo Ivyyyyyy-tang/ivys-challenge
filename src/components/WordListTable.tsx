@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { type MemoryMark, type VocabularyWord } from '../data/vocabulary';
 
 export type WordListItem = {
+  entryId?: string;
   word: VocabularyWord;
   source?: {
     label: string;
@@ -14,6 +15,16 @@ type WordListTableProps = {
   onSpeak: (word: string) => void;
   onSubmitSpelling: (wordId: string, input: string) => void;
   onSetMemoryMark: (wordId: string, boxIndex: number, mark: 'check' | 'cross') => void;
+  selectionMode?: boolean;
+  selectedEntryIds?: Set<string>;
+  allSelected?: boolean;
+  onToggleSelectAll?: () => void;
+  onToggleSelectEntry?: (entryId: string) => void;
+  readingSelectionEnabled?: boolean;
+  selectedReadingWordIds?: Set<string>;
+  allReadingWordsSelected?: boolean;
+  onToggleSelectAllReadingWords?: () => void;
+  onToggleSelectReadingWord?: (wordId: string) => void;
 };
 
 export function WordListTable({
@@ -21,10 +32,21 @@ export function WordListTable({
   onSpeak,
   onSubmitSpelling,
   onSetMemoryMark,
+  selectionMode = false,
+  selectedEntryIds = new Set<string>(),
+  allSelected = false,
+  onToggleSelectAll,
+  onToggleSelectEntry,
+  readingSelectionEnabled = false,
+  selectedReadingWordIds = new Set<string>(),
+  allReadingWordsSelected = false,
+  onToggleSelectAllReadingWords,
+  onToggleSelectReadingWord,
 }: WordListTableProps) {
   const [wordVisible, setWordVisible] = useState(true);
   const [meaningVisible, setMeaningVisible] = useState(true);
   const [spellingInputs, setSpellingInputs] = useState<Record<string, string>>({});
+  const checkboxSelectionEnabled = selectionMode || readingSelectionEnabled;
 
   const handleSpellingSubmit = (wordId: string) => {
     const currentInput = spellingInputs[wordId] ?? '';
@@ -57,6 +79,7 @@ export function WordListTable({
       <div className="mt-6 min-h-0 flex-1 overflow-auto">
         <table className="w-full table-fixed border-separate border-spacing-y-3 text-left">
           <colgroup>
+            {checkboxSelectionEnabled ? <col className="w-[5%]" /> : null}
             <col className="w-[6%]" />
             <col className="w-[17%]" />
             <col className="w-[14%]" />
@@ -66,6 +89,24 @@ export function WordListTable({
           </colgroup>
           <thead>
             <tr className="text-[11px] uppercase tracking-[0.26em] text-taupe/90">
+              {checkboxSelectionEnabled ? (
+                <th className="px-3 py-2 font-normal">
+                  <input
+                    type="checkbox"
+                    checked={selectionMode ? allSelected : allReadingWordsSelected}
+                    onChange={() => {
+                      if (selectionMode) {
+                        onToggleSelectAll?.();
+                        return;
+                      }
+
+                      onToggleSelectAllReadingWords?.();
+                    }}
+                    aria-label={selectionMode ? 'Select all personal vocabulary entries' : 'Select all reading words'}
+                    className="h-5 w-5 accent-ink"
+                  />
+                </th>
+              ) : null}
               <th className="px-3 py-2 font-normal">Number</th>
               <th className="px-3 py-2 font-normal">Word</th>
               <th className="px-3 py-2 font-normal">Phonetic + Audio</th>
@@ -76,10 +117,56 @@ export function WordListTable({
           </thead>
           <tbody>
             {items.map((item, index) => {
-              const { word, source } = item;
+              const { entryId, word, source } = item;
 
               return (
-                <tr key={word.id} className="bg-white/68 shadow-card">
+                <tr
+                  key={word.id}
+                  className={[
+                    'bg-white/68 shadow-card',
+                    selectionMode && entryId ? 'cursor-pointer' : '',
+                    readingSelectionEnabled ? 'cursor-pointer' : '',
+                  ].join(' ')}
+                  onClick={(event) => {
+                    if (!checkboxSelectionEnabled) {
+                      return;
+                    }
+
+                    const target = event.target as HTMLElement;
+                    if (target.closest('button, input, textarea, select, a, label')) {
+                      return;
+                    }
+
+                    if (selectionMode && entryId) {
+                      onToggleSelectEntry?.(entryId);
+                      return;
+                    }
+
+                    if (readingSelectionEnabled) {
+                      onToggleSelectReadingWord?.(word.id);
+                    }
+                  }}
+                >
+                  {checkboxSelectionEnabled ? (
+                    <td className="px-3 py-4 align-top">
+                      <input
+                        type="checkbox"
+                        checked={selectionMode ? (entryId ? selectedEntryIds.has(entryId) : false) : selectedReadingWordIds.has(word.id)}
+                        onChange={() => {
+                          if (selectionMode && entryId) {
+                            onToggleSelectEntry?.(entryId);
+                            return;
+                          }
+
+                          if (readingSelectionEnabled) {
+                            onToggleSelectReadingWord?.(word.id);
+                          }
+                        }}
+                        aria-label={selectionMode ? `Select ${word.word}` : `Choose ${word.word} for AI Reading`}
+                        className="h-5 w-5 accent-ink"
+                      />
+                    </td>
+                  ) : null}
                   <td className="px-3 py-4 text-sm text-taupe">{index + 1}</td>
                   <td className="px-3 py-4">
                     <p className="font-display text-2xl text-ink">{wordVisible ? word.word : '••••••'}</p>

@@ -4,9 +4,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
-import { personalVocabularyDatabase, type PersonalVocabularyEntry } from '../data/personalVocabulary';
+import {
+  personalVocabularyDatabase,
+  type PersonalVocabularyEntry,
+  type PersonalVocabularyEnrichment,
+  removePersonalVocabularyByIds,
+} from '../data/personalVocabulary';
+import {
+  demoPersonalVocabularyDatabase,
+  shouldUseDemoPersonalVocabulary,
+} from '../data/demoPersonalVocabulary';
 import {
   chapterDefinitions,
   initialMemoryBoxes,
@@ -20,6 +30,11 @@ import {
   type WordAction,
   vocabularyDatabase,
 } from '../data/vocabulary';
+import {
+  enrichPendingVocabularyWord,
+  enrichVocabularyWord,
+  getEnrichmentStatus,
+} from '../data/vocabularyEnrichment';
 
 type PersistedWordState = {
   memory: MemoryBoxes;
@@ -27,6 +42,7 @@ type PersistedWordState = {
   memoryMarks: MemoryMark[];
   memoryHistory: MemoryMark[][];
   lastReviewAction?: WordAction;
+  learnedOn?: string;
 };
 
 type VocabularyContextValue = {
@@ -37,6 +53,7 @@ type VocabularyContextValue = {
   totalWords: number;
   getWordsByChapter: (chapter: number) => VocabularyWord[];
   getPersonalVocabularyWords: () => Array<{
+    entryId: string;
     word: VocabularyWord;
     source: {
       label: string;
@@ -48,7 +65,10 @@ type VocabularyContextValue = {
     wordId?: string;
     customWord?: VocabularyWord;
     source: { label: string; detail: string; dateAdded: string };
+    enrichment?: PersonalVocabularyEnrichment;
   }) => void;
+  addPersonalVocabularyFromReading: (rawWord: string) => VocabularyWord | null;
+  removePersonalVocabularyEntries: (ids: string[]) => void;
   updateWordReview: (wordId: string, action: WordAction) => void;
   setMemoryMark: (wordId: string, boxIndex: number, mark: 'check' | 'cross') => void;
   submitSpellingAttempt: (wordId: string, input: string) => boolean;
@@ -60,32 +80,9 @@ const PERSONAL_VOCABULARY_STORAGE_KEY = 'ivys-challenge.personal-vocabulary';
 const VocabularyContext = createContext<VocabularyContextValue | null>(null);
 
 export function VocabularyProvider({ children }: { children: ReactNode }) {
-  const [persistedState, setPersistedState] = useState<Record<string, PersistedWordState>>({});
-  const [personalEntries, setPersonalEntries] = useState(personalVocabularyDatabase);
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-
-    try {
-      const parsed = JSON.parse(saved) as Record<string, PersistedWordState>;
-      setPersistedState(parsed);
-    } catch {
-      setPersistedState({});
-    }
-  }, []);
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem(PERSONAL_VOCABULARY_STORAGE_KEY);
-    if (!saved) return;
-
-    try {
-      const parsed = JSON.parse(saved) as typeof personalVocabularyDatabase;
-      setPersonalEntries(parsed);
-    } catch {
-      setPersonalEntries(personalVocabularyDatabase);
-    }
-  }, []);
+  const [persistedState, setPersistedState] = useState<Record<string, PersistedWordState>>(() => loadInitialPersistedState());
+  const [personalEntries, setPersonalEntries] = useState<PersonalVocabularyEntry[]>(() => loadInitialPersonalEntries());
+  const attemptedEnrichmentIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedState));
@@ -93,6 +90,45 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     window.localStorage.setItem(PERSONAL_VOCABULARY_STORAGE_KEY, JSON.stringify(personalEntries));
+  }, [personalEntries]);
+
+  const enrichPendingPersonalVocabulary = async () => {
+    const pendingEntries = personalEntries.filter(
+      (entry) => entry.enrichment?.status === 'pending' && !attemptedEnrichmentIdsRef.current.has(entry.id),
+    );
+
+    if (pendingEntries.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      pendingEntries.map(async (entry) => {
+        attemptedEnrichmentIdsRef.current.add(entry.id);
+
+        try {
+          const enrichedEntry = await enrichPendingVocabularyWord(entry);
+
+          if (enrichedEntry === entry) {
+            return;
+          }
+
+          setPersonalEntries((current) => {
+            const currentEntry = current.find((item) => item.id === entry.id);
+            if (!currentEntry || currentEntry.enrichment?.status !== 'pending') {
+              return current;
+            }
+
+            return current.map((item) => (item.id === entry.id ? enrichedEntry : item));
+          });
+        } catch {
+          // Keep the original entry and avoid noisy console errors.
+        }
+      }),
+    );
+  };
+
+  useEffect(() => {
+    void enrichPendingPersonalVocabulary();
   }, [personalEntries]);
 
   const words = useMemo(() => {
@@ -107,6 +143,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         memoryMarks: override.memoryMarks ?? [...initialMemoryMarks],
         memoryHistory: override.memoryHistory ?? [],
         lastReviewAction: override.lastReviewAction,
+        learnedOn: override.learnedOn,
       };
     });
   }, [persistedState]);
@@ -156,16 +193,19 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
               memoryMarks: override.memoryMarks ?? [...initialMemoryMarks],
               memoryHistory: override.memoryHistory ?? [],
               lastReviewAction: override.lastReviewAction,
+              learnedOn: override.learnedOn,
             }
           : baseWord;
 
         if (!word) return null;
         return {
+          entryId: entry.id,
           word,
           source: entry.source,
         };
       })
       .filter(Boolean) as Array<{
+      entryId: string;
       word: VocabularyWord;
       source: {
         label: string;
@@ -178,10 +218,12 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     wordId,
     customWord,
     source,
+    enrichment,
   }: {
     wordId?: string;
     customWord?: VocabularyWord;
     source: { label: string; detail: string; dateAdded: string };
+    enrichment?: PersonalVocabularyEnrichment;
   }) => {
     setPersonalEntries((current) => {
       const targetId = wordId ?? customWord?.id;
@@ -200,10 +242,46 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
           wordId,
           customWord,
           source,
+          enrichment,
         },
         ...current,
       ];
     });
+  };
+
+  const addPersonalVocabularyFromReading = (rawWord: string) => {
+    const enrichedWord = enrichVocabularyWord({
+      rawWord,
+      existingWords: words,
+    });
+
+    if (!enrichedWord.word) {
+      return null;
+    }
+
+    const enrichment = getEnrichmentStatus({
+      word: enrichedWord,
+      matchedFromExisting: enrichedWord.chapter > 0,
+    });
+
+    addPersonalVocabularyWord({
+      ...(enrichedWord.chapter > 0 ? { wordId: enrichedWord.id } : { customWord: enrichedWord }),
+      source: {
+        label: 'AI Reading',
+        detail: "Today's Reading",
+        dateAdded: new Date().toISOString().slice(0, 10),
+      },
+      enrichment: {
+        ...enrichment,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    return enrichedWord;
+  };
+
+  const removePersonalVocabularyEntries = (ids: string[]) => {
+    setPersonalEntries((current) => removePersonalVocabularyByIds(current, ids));
   };
 
   const updateWordReview = (wordId: string, action: WordAction) => {
@@ -219,6 +297,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
 
       const nextMemory = getNextMemory(baseWord.memory, action);
       const nextSpelling = getNextSpelling(baseWord.spelling, action);
+      const learnedOn = baseWord.learnedOn ?? (action === 'known' && !baseWord.memory.some(Boolean) ? todayKey() : undefined);
 
       return {
         ...current,
@@ -228,6 +307,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
           memoryMarks: getNextMemoryMarks(baseWord.memoryMarks ?? createEmptyMemoryMarks(), action),
           memoryHistory: baseWord.memoryHistory ?? [],
           lastReviewAction: action,
+          learnedOn,
         },
       };
     });
@@ -249,6 +329,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       const currentHistory = [...(baseWord.memoryHistory ?? [])];
       const nextAttempts = countCompletedMarks(currentMarks);
       const nextCrosses = currentMarks.filter((item) => item === 'cross').length;
+      const learnedOn = baseWord.learnedOn ?? (mark === 'check' ? todayKey() : undefined);
 
       let finalMarks = currentMarks;
       let finalHistory = currentHistory;
@@ -270,6 +351,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
           memoryMarks: finalMarks,
           memoryHistory: finalHistory,
           lastReviewAction: baseWord.lastReviewAction,
+          learnedOn,
         },
       };
     });
@@ -301,6 +383,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         memoryMarks: baseWord.memoryMarks ?? [...initialMemoryMarks],
         memoryHistory: baseWord.memoryHistory ?? [],
         lastReviewAction: baseWord.lastReviewAction,
+        learnedOn: baseWord.learnedOn,
       },
     }));
 
@@ -317,6 +400,8 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       getWordsByChapter,
       getPersonalVocabularyWords,
       addPersonalVocabularyWord,
+      addPersonalVocabularyFromReading,
+      removePersonalVocabularyEntries,
       updateWordReview,
       setMemoryMark,
       submitSpellingAttempt,
@@ -359,6 +444,93 @@ function getNextMemory(current: MemoryBoxes, action: WordAction): MemoryBoxes {
   const realIndex = next.length - 1 - lastTrueIndex;
   next[realIndex] = false;
   return next;
+}
+
+function migratePersonalVocabularyEntries(entries: PersonalVocabularyEntry[]) {
+  return entries.map((entry) => {
+    if (entry.wordId) {
+      return {
+        ...entry,
+        enrichment:
+          entry.enrichment ??
+          ({
+            status: 'complete',
+            source: 'main-vocabulary',
+            updatedAt: entry.source.dateAdded,
+          } satisfies PersonalVocabularyEnrichment),
+      };
+    }
+
+    if (!entry.customWord) {
+      return entry;
+    }
+
+    const customWord = {
+      ...entry.customWord,
+      phonetic: entry.customWord.phonetic ?? '',
+      audio: entry.customWord.audio ?? '',
+      part_of_speech: entry.customWord.part_of_speech || 'Unknown',
+      meaning: entry.customWord.meaning || 'Pending enrichment',
+      example: entry.customWord.example || 'Captured from AI Reading.',
+      word_family: entry.customWord.word_family ?? [],
+      collocations: entry.customWord.collocations ?? [],
+      memory: entry.customWord.memory ?? [...initialMemoryBoxes],
+      spelling: entry.customWord.spelling ?? { ...initialSpellingStats },
+      memoryMarks: entry.customWord.memoryMarks ?? [...initialMemoryMarks],
+      memoryHistory: entry.customWord.memoryHistory ?? [],
+      learnedOn: entry.customWord.learnedOn,
+    };
+
+    return {
+      ...entry,
+      customWord,
+      enrichment: entry.enrichment ?? {
+        ...getEnrichmentStatus({ word: customWord }),
+        updatedAt: entry.source.dateAdded,
+      },
+    };
+  });
+}
+
+function repairPersonalVocabulary(entries: PersonalVocabularyEntry[]) {
+  return entries.map((entry) => {
+    if (!entry.customWord) {
+      return entry;
+    }
+
+    const needsRepair =
+      entry.customWord.meaning === '' ||
+      entry.customWord.phonetic === '' ||
+      entry.customWord.part_of_speech === '';
+
+    if (!needsRepair) {
+      return entry;
+    }
+
+    const repairedWord = {
+      ...entry.customWord,
+      meaning: entry.customWord.meaning || 'Pending enrichment',
+      phonetic: entry.customWord.phonetic || '',
+      part_of_speech: entry.customWord.part_of_speech || 'Unknown',
+      example: entry.customWord.example || 'Captured from AI Reading.',
+      word_family: entry.customWord.word_family ?? [],
+      collocations: entry.customWord.collocations ?? [],
+      memory: entry.customWord.memory ?? [...initialMemoryBoxes],
+      spelling: entry.customWord.spelling ?? { ...initialSpellingStats },
+      memoryMarks: entry.customWord.memoryMarks ?? [...initialMemoryMarks],
+      memoryHistory: entry.customWord.memoryHistory ?? [],
+      learnedOn: entry.customWord.learnedOn,
+    };
+
+    return {
+      ...entry,
+      customWord: repairedWord,
+      enrichment: {
+        ...getEnrichmentStatus({ word: repairedWord }),
+        updatedAt: entry.enrichment?.updatedAt ?? entry.source.dateAdded,
+      },
+    };
+  });
 }
 
 function getNextSpelling(current: SpellingStats, action: WordAction): SpellingStats {
@@ -415,6 +587,45 @@ function countCompletedMarks(marks: MemoryMark[]) {
   return marks.filter((mark) => mark !== 'empty').length;
 }
 
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function normalizeWord(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function loadInitialPersonalEntries(): PersonalVocabularyEntry[] {
+  if (typeof window === 'undefined') {
+    return personalVocabularyDatabase;
+  }
+
+  const saved = window.localStorage.getItem(PERSONAL_VOCABULARY_STORAGE_KEY);
+  if (!saved) {
+    return shouldUseDemoPersonalVocabulary() ? demoPersonalVocabularyDatabase : personalVocabularyDatabase;
+  }
+
+  try {
+    const parsed = JSON.parse(saved) as typeof personalVocabularyDatabase;
+    return repairPersonalVocabulary(migratePersonalVocabularyEntries(parsed));
+  } catch {
+    return personalVocabularyDatabase;
+  }
+}
+
+function loadInitialPersistedState(): Record<string, PersistedWordState> {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  const saved = window.localStorage.getItem(STORAGE_KEY);
+  if (!saved) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(saved) as Record<string, PersistedWordState>;
+  } catch {
+    return {};
+  }
 }

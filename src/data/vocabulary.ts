@@ -35,6 +35,7 @@ export type VocabularyWord = {
   memoryMarks: MemoryMark[];
   memoryHistory: MemoryMark[][];
   lastReviewAction?: WordAction;
+  learnedOn?: string;
 };
 
 type RawVocabularyWord = {

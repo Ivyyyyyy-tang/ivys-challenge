@@ -1,16 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useVocabulary } from '../context/VocabularyContext';
+import { buildReadingSegmentsFromArticle, type ReadingSegment } from '../data/aiReadingGeneration';
 import { type VocabularyWord } from '../data/vocabulary';
+import { parseSelectedReadingWordIds, resolveSelectedReadingWords } from '../services/aiReadingSelection';
+import { generateReadingArticle, type GenerateReadingArticleResult } from '../services/aiReadingService';
 import { speakWord } from '../utils/speech';
 
-type ReadingSegment = {
-  text: string;
-  word?: VocabularyWord;
-  isUnknown?: boolean;
-};
+const MIN_LEARNED_WORD_COUNT = 4;
+const MAX_LEARNED_WORD_COUNT = 12;
 
 export function AiReadingPage() {
-  const { words, addPersonalVocabularyWord } = useVocabulary();
+  const location = useLocation();
+  const { words, getPersonalVocabularyWords, addPersonalVocabularyFromReading } = useVocabulary();
   const [selectedWord, setSelectedWord] = useState<VocabularyWord | null>(null);
   const [lastAddedWordId, setLastAddedWordId] = useState<string | null>(null);
   const [setIndex, setSetIndex] = useState(0);
@@ -19,114 +21,152 @@ export function AiReadingPage() {
   const [readingCardCollapsed, setReadingCardCollapsed] = useState(true);
   const [wordInsightHeight, setWordInsightHeight] = useState(190);
   const [translationVisible, setTranslationVisible] = useState(false);
+  const [desiredLearnedWordCount, setDesiredLearnedWordCount] = useState(8);
+  const [readingResult, setReadingResult] = useState<GenerateReadingArticleResult | null>(null);
+  const [isGeneratingArticle, setIsGeneratingArticle] = useState(false);
+  const [readingError, setReadingError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
-  const learnedWordPool = useMemo(() => {
-    const learned = words.filter((word) => word.memory.some(Boolean) && isSingleWord(word.word));
-    if (learned.length >= 10) {
-      return learned;
-    }
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const selectedReadingWordIds = useMemo(() => parseSelectedReadingWordIds(location.search), [location.search]);
+  const personalVocabularyWords = useMemo(
+    () => getPersonalVocabularyWords().map((item) => item.word),
+    [getPersonalVocabularyWords],
+  );
+  const selectedReadingWords = useMemo(
+    () =>
+      resolveSelectedReadingWords({
+        selectedWordIds: selectedReadingWordIds,
+        vocabularyWords: words,
+        personalVocabularyWords,
+      }),
+    [personalVocabularyWords, selectedReadingWordIds, words],
+  );
+  const isUserSelectedWordMode = selectedReadingWords.length > 0;
 
-    const fallback = words.filter((word) => isSingleWord(word.word));
-    const merged = [...learned];
-    for (const word of fallback) {
-      if (merged.some((item) => item.id === word.id)) continue;
-      merged.push(word);
-      if (merged.length >= 12) break;
-    }
+  const todayLearnedWordPool = useMemo(
+    () => words.filter((word) => word.learnedOn === todayKey && isSingleWord(word.word)),
+    [todayKey, words],
+  );
 
-    return merged;
-  }, [words]);
+  const fallbackLearnedWordPool = useMemo(
+    () => words.filter((word) => word.memory.some(Boolean) && isSingleWord(word.word)),
+    [words],
+  );
+
+  const activeLearnedWordPool = isUserSelectedWordMode
+    ? selectedReadingWords
+    : todayLearnedWordPool.length > 0
+      ? todayLearnedWordPool
+      : fallbackLearnedWordPool;
+  const actualLearnedWordCount = isUserSelectedWordMode
+    ? selectedReadingWords.length
+    : Math.max(1, Math.min(desiredLearnedWordCount, Math.max(activeLearnedWordPool.length, 1)));
 
   const learnedWords = useMemo(() => {
-    const start = learnedWordPool.length === 0 ? 0 : (setIndex * 12) % learnedWordPool.length;
-    const doubled = [...learnedWordPool, ...learnedWordPool];
-    return doubled.slice(start, start + 12);
-  }, [learnedWordPool, setIndex]);
+    if (selectedReadingWords.length > 0) {
+      return selectedReadingWords;
+    }
+
+    if (activeLearnedWordPool.length === 0) {
+      return fillWords([], actualLearnedWordCount);
+    }
+
+    const offsetStep = Math.max(1, Math.floor(activeLearnedWordPool.length / 2));
+    const start = (setIndex * offsetStep) % activeLearnedWordPool.length;
+    const rotated = [...activeLearnedWordPool.slice(start), ...activeLearnedWordPool.slice(0, start)];
+    return rotated.slice(0, actualLearnedWordCount);
+  }, [activeLearnedWordPool, actualLearnedWordCount, selectedReadingWords, setIndex]);
 
   const unknownWordPool = useMemo(() => {
     return words
       .filter((word) => !word.memory.some(Boolean) && isSingleWord(word.word))
-      .filter((word) => !learnedWordPool.some((item) => item.id === word.id));
-  }, [learnedWordPool, words]);
+      .filter((word) => !learnedWords.some((item) => item.id === word.id));
+  }, [learnedWords, words]);
 
   const unknownWords = useMemo(() => {
-    const start = unknownWordPool.length === 0 ? 0 : (articleVariant * 6) % unknownWordPool.length;
+    const targetCount = Math.max(3, Math.min(6, Math.ceil(actualLearnedWordCount / 2)));
+    if (unknownWordPool.length === 0) {
+      return fillWords([], targetCount);
+    }
+
+    const start = (articleVariant * targetCount) % unknownWordPool.length;
     const doubled = [...unknownWordPool, ...unknownWordPool];
-    return doubled.slice(start, start + 6);
-  }, [articleVariant, unknownWordPool]);
+    return doubled.slice(start, start + targetCount);
+  }, [actualLearnedWordCount, articleVariant, unknownWordPool]);
 
-  const readingSegments = useMemo(
-    () => buildReadingSegments(learnedWords, unknownWords, articleVariant),
-    [articleVariant, learnedWords, unknownWords],
+  const difficultyLabel = useMemo(() => {
+    if (actualLearnedWordCount >= 10) return 'B1';
+    if (actualLearnedWordCount >= 6) return 'A2-B1';
+    return 'A2';
+  }, [actualLearnedWordCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    setIsGeneratingArticle(true);
+    setReadingError(null);
+
+    void generateReadingArticle({
+      words: learnedWords,
+      difficulty: difficultyLabel,
+      unknownRatio: 8,
+      length: 120,
+      variant: articleVariant,
+    })
+      .then((result) => {
+        if (cancelled || requestId !== requestIdRef.current) return;
+        setReadingResult(result);
+      })
+      .catch(() => {
+        if (cancelled || requestId !== requestIdRef.current) return;
+        setReadingError('Reading generation is temporarily unavailable.');
+      })
+      .finally(() => {
+        if (cancelled || requestId !== requestIdRef.current) return;
+        setIsGeneratingArticle(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [articleVariant, difficultyLabel, learnedWords]);
+
+  const readingParagraphs = useMemo(
+    () =>
+      buildReadingSegmentsFromArticle({
+        article: readingResult?.article ?? '',
+        learnedWords,
+        unknownWords,
+      }),
+    [learnedWords, readingResult?.article, unknownWords],
   );
 
+  const flatReadingSegments = useMemo(() => readingParagraphs.flat(), [readingParagraphs]);
   const approximateWordCount = useMemo(
-    () => readingSegments.filter((segment) => /[A-Za-z]/.test(segment.text)).length,
-    [readingSegments],
+    () => flatReadingSegments.filter((segment) => /[A-Za-z]/.test(segment.text)).length,
+    [flatReadingSegments],
   );
 
-  const unknownRatio = useMemo(() => {
-    const unknownCount = readingSegments.filter((segment) => segment.isUnknown).length;
-    if (approximateWordCount === 0) return 0;
-    return Math.round((unknownCount / approximateWordCount) * 100);
-  }, [approximateWordCount, readingSegments]);
-
-  const difficultyLabel = learnedWords.length >= 12 ? 'Intermediate' : 'Foundational';
+  const unknownRatio = readingResult?.validation.unknownRatio ?? 0;
 
   const handleSpeak = (word: string) => {
     speakWord(word);
   };
 
   const handleAddUnknownWord = (word: VocabularyWord) => {
-    addPersonalVocabularyWord({
-      wordId: word.id,
-      source: {
-        label: 'AI Reading',
-        detail: 'Today\'s Reading',
-        dateAdded: new Date().toISOString().slice(0, 10),
-      },
-    });
+    addPersonalVocabularyFromReading(word.word);
     setLastAddedWordId(word.id);
     setSelectedWord(word);
   };
 
   const handleAddSelectedReadingWord = (rawWord: string) => {
-    const normalized = normalizeArticleWord(rawWord);
-    if (!normalized) return;
+    const enrichedWord = addPersonalVocabularyFromReading(rawWord);
+    if (!enrichedWord) return;
 
-    const matchedWord = words.find((item) => normalizeArticleWord(item.word) === normalized);
-    if (matchedWord) {
-      handleAddUnknownWord(matchedWord);
-      return;
-    }
-
-    const customWord: VocabularyWord = {
-      id: `ai-reading-custom-${normalized}`,
-      chapter: 0,
-      word: normalized,
-      phonetic: '',
-      audio: '',
-      part_of_speech: '',
-      meaning: '',
-      example: '',
-      word_family: [],
-      collocations: [],
-      memory: [false, false, false, false, false, false, false],
-      spelling: { attempts: 0, correct: 0, errors: 0 },
-      memoryMarks: ['empty', 'empty', 'empty', 'empty', 'empty', 'empty', 'empty'],
-      memoryHistory: [],
-    };
-
-    addPersonalVocabularyWord({
-      customWord,
-      source: {
-        label: 'AI Reading',
-        detail: 'Today\'s Reading',
-        dateAdded: new Date().toISOString().slice(0, 10),
-      },
-    });
-    setLastAddedWordId(customWord.id);
-    setSelectedWord(customWord);
+    setLastAddedWordId(enrichedWord.id);
+    setSelectedWord(enrichedWord);
   };
 
   const handleArticleDoubleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -175,6 +215,16 @@ export function AiReadingPage() {
     window.addEventListener('mouseup', onMouseUp);
   };
 
+  const handleDecreaseLearnedWordCount = () => {
+    setDesiredLearnedWordCount((count) => Math.max(MIN_LEARNED_WORD_COUNT, count - 1));
+    setSetIndex(0);
+  };
+
+  const handleIncreaseLearnedWordCount = () => {
+    setDesiredLearnedWordCount((count) => Math.min(MAX_LEARNED_WORD_COUNT, count + 1));
+    setSetIndex(0);
+  };
+
   return (
     <section className="flex h-full flex-col gap-8">
       <header className="flex items-start justify-between gap-8 border-b border-line/70 pb-8">
@@ -184,11 +234,18 @@ export function AiReadingPage() {
         </div>
 
         <div className="space-y-4 text-right">
-          <Stat label="Selected Words" value={String(learnedWords.length)} />
+          <Stat label="Selected Words" value={String(actualLearnedWordCount)} />
           <Stat label="Unknown Ratio" value={`${unknownRatio}%`} />
           <Stat label="Difficulty" value={difficultyLabel} />
         </div>
       </header>
+
+      {isUserSelectedWordMode ? (
+        <div className="flex items-center justify-between gap-4 border border-line/70 bg-white/60 px-5 py-4 text-sm text-taupe shadow-card">
+          <p>Using {selectedReadingWords.length} user-selected words for this reading.</p>
+          <p className="uppercase tracking-[0.22em] text-taupe/80">Refresh keeps this selection through the URL.</p>
+        </div>
+      ) : null}
 
       {readingCardCollapsed ? (
         <div className="flex items-center gap-4">
@@ -200,12 +257,20 @@ export function AiReadingPage() {
             Card
           </button>
           <div className="flex flex-wrap items-center gap-3">
+            <LearnedWordCountControl
+              actualCount={actualLearnedWordCount}
+              availableCount={activeLearnedWordPool.length}
+              onDecrease={handleDecreaseLearnedWordCount}
+              onIncrease={handleIncreaseLearnedWordCount}
+              disabled={isUserSelectedWordMode}
+            />
             <button
               type="button"
               onClick={handleNextSet}
+              disabled={isUserSelectedWordMode}
               className="border border-ink px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-ink transition-colors hover:bg-ink hover:text-sand"
             >
-              Next Word Set
+              {isUserSelectedWordMode ? 'Selected Word Set' : 'Next Word Set'}
             </button>
             <button
               type="button"
@@ -243,21 +308,40 @@ export function AiReadingPage() {
             <div className="max-w-[560px] space-y-3">
               <p className="text-[11px] uppercase tracking-[0.34em] text-taupe/90">Today&apos;s Reading Card</p>
               <h3 className="font-display text-[2.2rem] leading-tight text-ink">
-                A short article built from your learned vocabulary
+                {readingResult?.title ?? 'A short article built from your learned vocabulary'}
               </h3>
               <p className="max-w-3xl text-sm leading-7 text-taupe">
                 Around {approximateWordCount} words. Single click any word to inspect it. Double click an unknown word
                 to add it to My Vocabulary Bank.
               </p>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-taupe/90">
+                Topic: {readingResult?.topic ?? 'Preparing article'}
+              </p>
             </div>
-            <div className="max-w-[280px] text-right text-sm text-taupe">
-              Unknown words stay between five and ten percent, while the selected learned words shape the main reading
-              flow.
+            <div className="max-w-[320px] text-right text-sm text-taupe">
+              {todayLearnedWordPool.length > 0
+                ? `${todayLearnedWordPool.length} words were learned on ${todayKey}, and this article rotates through them.`
+                : 'No new words were marked learned today yet, so the card is using your broader learned vocabulary as fallback.'}
+              <p className="mt-3 text-[11px] uppercase tracking-[0.24em] text-taupe/90">
+                Mode: {readingResult?.mode ?? 'loading'}
+              </p>
             </div>
           </div>
 
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <LearnedWordCountControl
+              actualCount={actualLearnedWordCount}
+              availableCount={activeLearnedWordPool.length}
+              onDecrease={handleDecreaseLearnedWordCount}
+              onIncrease={handleIncreaseLearnedWordCount}
+            />
+            <p className="text-sm text-taupe">
+              {todayLearnedWordPool.length > 0 ? 'Source: Today learned words' : 'Source: Learned-word fallback'}
+            </p>
+          </div>
+
           <div className="mt-5 flex flex-wrap gap-2">
-            {learnedWords.slice(0, 12).map((word) => (
+            {learnedWords.map((word) => (
               <span
                 key={word.id}
                 className="border border-line bg-sand/45 px-3 py-2 text-[11px] uppercase tracking-[0.24em] text-taupe"
@@ -329,7 +413,9 @@ export function AiReadingPage() {
                 lineHeight: readingFontSize >= 20 ? '2.15rem' : '2rem',
               }}
             >
-              {splitIntoParagraphs(readingSegments).map((paragraph, paragraphIndex) => (
+              {isGeneratingArticle && !readingResult ? <p className="text-base text-taupe">Generating a new reading...</p> : null}
+              {readingError ? <p className="text-base text-taupe">{readingError}</p> : null}
+              {readingParagraphs.map((paragraph, paragraphIndex) => (
                 <p key={paragraphIndex}>
                   {paragraph.map((segment, segmentIndex) =>
                     segment.word ? (
@@ -346,6 +432,7 @@ export function AiReadingPage() {
                         }}
                         className={[
                           'inline select-none transition-colors',
+                          segment.isTodayLearned ? 'font-semibold text-ink' : '',
                           segment.isUnknown
                             ? 'border-b border-dashed border-taupe/70 text-ink hover:text-taupe'
                             : 'hover:text-taupe',
@@ -367,7 +454,7 @@ export function AiReadingPage() {
               <div className="mt-10 border-t border-line/70 pt-8">
                 <p className="text-[11px] uppercase tracking-[0.3em] text-taupe/90">Translation</p>
                 <div className="mt-5 space-y-5 text-base leading-9 text-taupe">
-                  {getTranslationParagraphs(articleVariant).map((paragraph, index) => (
+                  {(readingResult?.translation.split(/\n\s*\n/).filter(Boolean) ?? []).map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>
                   ))}
                 </div>
@@ -432,12 +519,46 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function isSingleWord(value: string) {
-  return !value.includes(' ');
+function LearnedWordCountControl({
+  actualCount,
+  availableCount,
+  onDecrease,
+  onIncrease,
+  disabled = false,
+}: {
+  actualCount: number;
+  availableCount: number;
+  onDecrease: () => void;
+  onIncrease: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 border border-line bg-white/72 px-3 py-2">
+      <p className="text-[11px] uppercase tracking-[0.22em] text-taupe">Today Learned Words</p>
+      <button
+        type="button"
+        onClick={onDecrease}
+        disabled={disabled}
+        className="h-7 w-7 border border-line text-sm text-taupe transition-colors hover:border-taupe hover:text-ink disabled:cursor-default disabled:border-line disabled:text-taupe/50"
+      >
+        −
+      </button>
+      <span className="min-w-[3.25rem] text-center text-sm text-ink">{actualCount}</span>
+      <button
+        type="button"
+        onClick={onIncrease}
+        disabled={disabled}
+        className="h-7 w-7 border border-line text-sm text-taupe transition-colors hover:border-taupe hover:text-ink disabled:cursor-default disabled:border-line disabled:text-taupe/50"
+      >
+        +
+      </button>
+      <span className="text-xs text-taupe">available {availableCount}</span>
+    </div>
+  );
 }
 
-function normalizeArticleWord(value: string) {
-  return value.trim().toLowerCase().replace(/^[^a-z]+|[^a-z]+$/gi, '');
+function isSingleWord(value: string) {
+  return !value.includes(' ');
 }
 
 function renderPlainTextSegment(
@@ -464,132 +585,20 @@ function renderPlainTextSegment(
   });
 }
 
-function splitIntoParagraphs(segments: ReadingSegment[]) {
-  return [segments.slice(0, 43), segments.slice(43, 84), segments.slice(84)];
-}
-
-function getTranslationParagraphs(variant: number) {
-  const translations = [
-    [
-      '日出时，向导向我们讲解了山谷上方的大气层和山丘下方的水圈。借助一个小型高度传感器，小组比较了岩石圈、氧气和氧化物在冷空气中的表现。',
-      '随后，一名学生画出了海岸的氢分布，另一名学生则解释了地核和地壳如何支持当地农业。在附近的实验室里，一个灾害模型和一张事故图表帮助我们把地幔、经度和纬度与日常天气联系起来。',
-      '最终的报告使用了地平线、灾难性观察、严重结论以及一个濒危提醒，说明细致阅读能够把新词汇转化为主动知识。',
-    ],
-    [
-      '在一次实地课堂上，我们沿着港口附近的地平线前进，并测量了悬崖周围的大气状况。黑板上的一条补充说明把岩石圈、氧气和氧化物联系在了一起。',
-      '随后，老师使用氢元素示意图来比较地核、地壳和地幔在现代农业中的作用。一个设备和一张地图帮助我们读取数据，而经度、纬度和地平线共同塑造了最后的总结。',
-      '到课程结束时，一段反思、一份复盘和一条洞察说明：已经学过的词汇能够支撑更强的阅读习惯。',
-    ],
-  ];
-
-  return translations[variant % translations.length];
-}
-
-function buildReadingSegments(
-  learnedWords: VocabularyWord[],
-  unknownWords: VocabularyWord[],
-  variant: number,
-): ReadingSegment[] {
-  const learned = fillWords(learnedWords, 12);
-  const unknown = fillWords(unknownWords, 6);
-
-  const templates = [
-    [
-      textSegment('At sunrise, our guide described the '),
-      wordSegment(learned[0]),
-      textSegment(' above the valley and the '),
-      wordSegment(learned[1]),
-      textSegment(' beneath the hills. Using a small '),
-      wordSegment(unknown[0], true),
-      textSegment(' sensor, the group compared '),
-      wordSegment(learned[2]),
-      textSegment(', '),
-      wordSegment(learned[3]),
-      textSegment(', and '),
-      wordSegment(learned[4]),
-      textSegment(' in the cool air. Later, one student drew the '),
-      wordSegment(learned[5]),
-      textSegment(' of the coast, while another explained how '),
-      wordSegment(learned[6]),
-      textSegment(' and '),
-      wordSegment(learned[7]),
-      textSegment(' support local farming. In a nearby lab, a '),
-      wordSegment(unknown[1], true),
-      textSegment(' model and a '),
-      wordSegment(unknown[2], true),
-      textSegment(' chart helped us connect '),
-      wordSegment(learned[8]),
-      textSegment(', '),
-      wordSegment(learned[9]),
-      textSegment(', and '),
-      wordSegment(learned[10]),
-      textSegment(' with daily weather. The final report used '),
-      wordSegment(learned[11]),
-      textSegment(', a '),
-      wordSegment(unknown[3], true),
-      textSegment(' observation, a '),
-      wordSegment(unknown[4], true),
-      textSegment(' conclusion, and one '),
-      wordSegment(unknown[5], true),
-      textSegment(' reminder to show that careful reading can turn new vocabulary into active knowledge.'),
-    ],
-    [
-      textSegment('During a field lesson, our class followed the '),
-      wordSegment(learned[0]),
-      textSegment(' near the harbor and measured the '),
-      wordSegment(learned[1]),
-      textSegment(' around nearby cliffs. A '),
-      wordSegment(unknown[0], true),
-      textSegment(' note on the board linked '),
-      wordSegment(learned[2]),
-      textSegment(' with '),
-      wordSegment(learned[3]),
-      textSegment(' and '),
-      wordSegment(learned[4]),
-      textSegment('. Later, the teacher used '),
-      wordSegment(learned[5]),
-      textSegment(' sketches to compare '),
-      wordSegment(learned[6]),
-      textSegment(', '),
-      wordSegment(learned[7]),
-      textSegment(', and '),
-      wordSegment(learned[8]),
-      textSegment(' in modern farming. One '),
-      wordSegment(unknown[1], true),
-      textSegment(' device and a '),
-      wordSegment(unknown[2], true),
-      textSegment(' map helped us read the data, while '),
-      wordSegment(learned[9]),
-      textSegment(', '),
-      wordSegment(learned[10]),
-      textSegment(', and '),
-      wordSegment(learned[11]),
-      textSegment(' shaped the final summary. By the end, a '),
-      wordSegment(unknown[3], true),
-      textSegment(' reflection, a '),
-      wordSegment(unknown[4], true),
-      textSegment(' review, and one '),
-      wordSegment(unknown[5], true),
-      textSegment(' insight showed how learned vocabulary can support a stronger reading habit.'),
-    ],
-  ];
-
-  return templates[variant % templates.length];
-}
-
 function fillWords(words: VocabularyWord[], count: number) {
   if (words.length >= count) {
     return words.slice(0, count);
   }
 
-  const filled = [...words];
-  while (filled.length < count) {
-    filled.push(words[filled.length % Math.max(words.length, 1)] ?? fallbackWord(filled.length));
+  const fallback = [...words];
+  while (fallback.length < count) {
+    fallback.push(words[fallback.length % Math.max(words.length, 1)] ?? createFallbackWord(fallback.length));
   }
-  return filled;
+
+  return fallback;
 }
 
-function fallbackWord(index: number): VocabularyWord {
+function createFallbackWord(index: number): VocabularyWord {
   return {
     id: `fallback-${index}`,
     chapter: 0,
@@ -606,12 +615,4 @@ function fallbackWord(index: number): VocabularyWord {
     memoryMarks: ['empty', 'empty', 'empty', 'empty', 'empty', 'empty', 'empty'],
     memoryHistory: [],
   };
-}
-
-function textSegment(text: string): ReadingSegment {
-  return { text };
-}
-
-function wordSegment(word: VocabularyWord, isUnknown = false): ReadingSegment {
-  return { text: word.word, word, isUnknown };
 }

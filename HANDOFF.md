@@ -1,58 +1,117 @@
 # Current Goal
-Freeze active development and leave Ivy's Challenge in a handoff-ready state so a brand-new Codex conversation can resume without relying on old chat history. The codebase already contains the main learning flows plus in-progress UI work around Vocabulary Garden, Word Card companion illustrations, and global cursor behavior.
+Keep Ivy's Challenge in a stable handoff state and let a brand-new Codex conversation resume work without relying on old chat history. The next phase is not broad feature expansion; it is choosing one unfinished stream and continuing from the real codebase state.
 
 # Current Stage
-Documentation / handoff freeze.
+Documentation / handoff freeze after recent AI Reading architecture refactor and vocabulary-system updates.
 
 # Done
-- Landing Page is implemented.
-- Sidebar shell is implemented with draggable ordering and resizable width.
-- Vocabulary Library is implemented.
-- Word Card and Word List flows are implemented.
-- AI Reading is implemented.
-- Personal Vocabulary Bank is implemented.
-- Vocabulary Garden exists as an in-progress module with route, sidebar entry, page, growth calculation layer, and chapter visualization.
-- AI Review Coach page has been removed from active flow; `/ai-review-coach` redirects to `/vocabulary-library`.
-- `PROJECT_HANDOFF.md` has been rewritten as a complete no-context handoff file.
+- Core app shell is implemented with landing page, framed desktop layout, draggable sidebar order, and resizable sidebar width.
+- Active product surfaces are implemented:
+  - Vocabulary Library
+  - Word Card Mode
+  - Word List Mode
+  - AI Reading
+  - Vocabulary Garden
+  - My Vocabulary Bank
+- `VocabularyContext` remains the central state layer for:
+  - normalized vocabulary data
+  - memory-box progress
+  - spelling progress
+  - personal vocabulary persistence
+- Personal Vocabulary Bank supports batch selection and batch deletion.
+- Word List selection rows support easier click-to-select behavior.
+- AI Reading now uses a new AI-driven architecture:
+  - page no longer builds articles itself
+  - `src/services/aiReadingService.ts` is the reading-generation entry point
+  - `src/services/aiProvider.ts` provides provider abstraction
+  - `src/data/aiReadingGeneration.ts` now focuses on semantic analysis, prompt construction, validation, and article-to-segment parsing
+  - when no provider config exists, the system falls back to `mode: "fallback"`
+- Vocabulary enrichment pipeline groundwork is present:
+  - `src/data/vocabularyEnrichment.ts`
+  - pending personal vocabulary enrichment
+  - dictionary API enrichment helpers
+  - AI enrichment placeholder data model
+- Recent verification passed:
+  - `npx tsc --noEmit`
+  - `npm run build`
+  - `node --test tests/aiReadingGeneration.test.mjs`
 
 # In Progress
-- Word Card right-side Q-version companion system is still mid-iteration.
-- Rabbit cursor rollout across the whole system is unfinished.
-- Vocabulary Garden is functional but not finalized.
-- Working tree contains many uncommitted UI and asset changes.
+- AI Reading is architecturally refactored, but real external AI provider wiring is not configured yet.
+- Current AI Reading fallback generation is intentionally transitional; it is more varied than before, but still not true model output until provider env vars are supplied.
+- Vocabulary enrichment has data-model and dictionary pipeline pieces, but there is no AI enrichment execution yet.
+- Vocabulary Garden exists and is usable, but still not clearly finalized as a product surface.
+- Working tree contains uncommitted feature work from multiple threads and should be reviewed before any git sync.
 
 # Blockers
-- None at the infrastructure level.
-- Main practical blocker is uncertainty about which current uncommitted visual iterations should be kept, cleaned, or reverted before syncing to GitHub.
+- No hard infrastructure blocker.
+- Main blocker is product-priority ambiguity: the next Codex should not guess whether to continue AI Reading provider integration, Vocabulary Garden refinement, enrichment continuation, or UI polish.
+- Real AI reading generation cannot become truly model-backed until provider environment variables are defined.
 
 # Key Files
-- `AGENTS.md`: collaboration rules and new-conversation protocol.
-- `HANDOFF.md`: short current-state continuation instructions.
-- `DECISIONS.md`: stable decisions and constraints that should not be re-litigated every turn.
-- `PROJECT_HANDOFF.md`: full detailed project handoff for a new Codex conversation.
-- `src/context/VocabularyContext.tsx`: vocabulary persistence, memory logic, spelling logic, and personal bank mutations.
-- `src/pages/AiReadingPage.tsx`: reading generation, translation, word interaction, and add-to-bank behavior.
-- `src/pages/VocabularyGardenPage.tsx`: current Vocabulary Garden UI.
-- `src/data/vocabularyGarden.ts`: garden growth calculation layer.
-- `src/components/WordCardCompanion.tsx`: right-side illustration and bubble system in Word Card mode.
-- `src/styles.css`: global background and current cursor scope.
+- `AGENTS.md`
+  - collaboration rules, continuation protocol, and handoff requirements.
+- `HANDOFF.md`
+  - short current-state continuation guide.
+- `DECISIONS.md`
+  - stable technical and product constraints that should not be re-decided casually.
+- `PROJECT_HANDOFF.md`
+  - detailed no-context handoff document for a new Codex conversation.
+- `src/context/VocabularyContext.tsx`
+  - single source of truth for vocabulary state, localStorage sync, personal bank mutations, and pending enrichment background pass.
+- `src/data/vocabulary.ts`
+  - normalized `VocabularyWord` model; includes progress fields and `learnedOn`.
+- `src/data/personalVocabulary.ts`
+  - personal vocabulary entry types, enrichment metadata, AI enrichment placeholder model, and removal helpers.
+- `src/data/vocabularyEnrichment.ts`
+  - normalization, enrichment status helpers, dictionary fetch layer, pending-word enrichment, and AI enrichment placeholder logic.
+- `src/data/aiReadingGeneration.ts`
+  - AI Reading semantic analysis, prompt builder, validation, and article parsing into clickable reading segments.
+- `src/services/aiProvider.ts`
+  - provider abstraction; currently expects env-based endpoint/model/key config.
+- `src/services/aiReadingService.ts`
+  - article generation service; uses provider if available, otherwise returns fallback result with `mode: "fallback"`.
+- `src/pages/AiReadingPage.tsx`
+  - AI Reading UI; now only selects words, requests reading generation, renders article/translation, and handles add-to-bank interactions.
+- `src/pages/PersonalVocabularyBankPage.tsx`
+  - personal bank list page with batch selection/deletion.
+- `src/components/WordListTable.tsx`
+  - shared list table including selection-mode behavior and row click selection UX.
+- `tests/aiReadingGeneration.test.mjs`
+  - tests for prompt, semantic grouping, fallback variation, and provider branch.
+- `tests/vocabularyEnrichment.test.mjs`
+  - tests around enrichment status and enrichment helpers.
+- `tests/personalVocabulary.test.mjs`
+  - tests for personal vocabulary removal helper behavior.
 
 # How To Continue
 1. Read `AGENTS.md`, `HANDOFF.md`, `DECISIONS.md`, and `PROJECT_HANDOFF.md`.
 2. Inspect `git status --short`.
 3. Compare the docs against the real code before making assumptions.
-4. Ask ivy which unfinished stream to resume first if not already specified.
-5. Only after that continue development.
+4. Confirm which unfinished stream ivy wants next:
+   - AI Reading provider integration
+   - Vocabulary enrichment continuation
+   - Vocabulary Garden refinement
+   - UI/interaction polish
+5. Continue only that stream; do not reopen broad multi-track development by default.
 
 # Next Action
-In a new conversation, read the four memory files first, then inspect `git status --short`, `src/components/WordCardCompanion.tsx`, `src/styles.css`, and `src/pages/VocabularyGardenPage.tsx` to verify that the current visual work matches the handoff notes.
+In a new conversation, first read the four memory files, then inspect `git status --short`, `src/pages/AiReadingPage.tsx`, `src/services/aiReadingService.ts`, and `src/context/VocabularyContext.tsx` to verify that the current AI Reading and enrichment notes match the code. After that, ask ivy which single unfinished stream to resume if she has not already specified it.
 
 # Run / Verify
 - `git status --short`
-- `./node_modules/.bin/tsc --noEmit`
-- `./node_modules/.bin/vite build`
+- `npx tsc --noEmit`
+- `npm run build`
+- `node_modules/.pnpm/esbuild@0.21.5/node_modules/esbuild/bin/esbuild src/data/aiReadingGeneration.ts --bundle --platform=node --format=esm --outfile=.tmp-tests/aiReadingGeneration.bundle.mjs`
+- `node_modules/.pnpm/esbuild@0.21.5/node_modules/esbuild/bin/esbuild src/services/aiReadingService.ts --bundle --platform=node --format=esm --outfile=.tmp-tests/aiReadingService.bundle.mjs`
+- `node --test tests/aiReadingGeneration.test.mjs`
 
 # Notes
-- The project is desktop-first.
-- The user prefers concise execution, minimal recap, and direct continuation.
-- The best next conversation prompt is already included in `PROJECT_HANDOFF.md`.
+- The app is still browser-first React + Vite, not yet Electronized.
+- `src/services/aiProvider.ts` reads:
+  - `VITE_AI_PROVIDER_ENDPOINT`
+  - `VITE_AI_PROVIDER_API_KEY`
+  - `VITE_AI_PROVIDER_MODEL`
+- Without those env vars, AI Reading correctly degrades to fallback mode.
+- `.tmp-tests/` exists because current test flow uses generated bundle artifacts for Node-based tests.
+- Do not commit or push blindly; the repository has multiple uncommitted changes outside the latest handoff edits.

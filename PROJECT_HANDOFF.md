@@ -1,617 +1,490 @@
 # Ivy's Challenge Project Handoff
 
-This document is for a brand-new Codex conversation with no prior chat context.
-It reflects the current codebase state in `/Users/apple/Documents/ivy'challenge`.
+This file is for a brand-new Codex conversation with zero prior context.
+It is intended to be sufficient on its own after also reading:
+- `AGENTS.md`
+- `HANDOFF.md`
+- `DECISIONS.md`
 
-## 1. Product Vision
+This document reflects the actual codebase state as of July 16, 2026.
 
-### Positioning
-Ivy's Challenge is a premium personal English-learning web app for focused self-study.
-It is not meant to feel like a mass-market vocabulary app, a game, or a noisy productivity dashboard.
-The intended feeling is a private learning studio: calm, elegant, analytical, and highly personal.
+## 1. What This Project Is
 
-### Design Philosophy
-- Clean, restrained, desktop-first presentation.
-- Minimal rather than crowded.
-- Premium rather than playful.
-- Editorial typography rather than generic app UI.
-- Warm beige and soft neutral tones rather than bright saturated accents.
-- Large whitespace, quiet motion, deliberate interaction.
-- Visual metaphors are allowed, but they must stay refined and non-cartoonish.
+Ivy's Challenge is a premium personal English-learning web application.
 
-## 2. Current Completed Features
+It is intentionally:
+- calm
+- minimal
+- editorial
+- desktop-first
+- personal rather than mass-market
 
-### Landing Page
-Implemented.
+It is intentionally not:
+- a noisy gamified vocabulary app
+- a dashboard full of widgets
+- a backend-heavy SaaS product
 
-What exists:
-- Top-left avatar using `src/assets/system-avatar.jpg`
-- Personal signature: `See it. Move beyond it.`
-- Live clock at top-right
-- Centered subtitle: `PRIVATE ENGLISH LEARNING SPACE`
-- Centered main title: `Ivy's Challenge`
-- Single entry button into the vocabulary system
-
-Primary file:
-- `src/pages/LandingPage.tsx`
-
-### Sidebar
-Implemented.
-
-What exists:
-- Desktop shell with left sidebar and right content canvas
-- Sidebar items currently shown:
-  - Vocabulary
-  - Vocabulary Garden
-  - AI Reading
-  - My Vocabulary Bank
-- Sidebar order is draggable
-- Sidebar width is resizable
-- Sidebar order and width persist in `localStorage`
-- Bottom utility link back to home
-
-Primary file:
-- `src/components/AppLayout.tsx`
-
-Important current note:
-- `AI Review Coach` has been removed as a real page and sidebar module.
-- The route `/ai-review-coach` currently redirects to `/vocabulary-library`.
-
-### Vocabulary Library
-Implemented.
-
-What exists:
-- 22 chapter cards built from the normalized vocabulary dataset
-- Top-right lightweight progress stats
-- Each chapter card shows:
-  - chapter label
-  - chapter topic
-  - progress bar
-  - learned words / total words
-  - `Word Card` button
-  - `Word List` button
-- Desktop-oriented responsive grid
-
-Primary file:
-- `src/pages/VocabularyLibraryPage.tsx`
-
-### Word Card
-Implemented and actively customized.
-
-What exists:
-- Chapter-specific word card mode
-- Personal bank word card mode
-- Adjustable word font size
-- Pronunciation display and audio trigger
-- Meaning hidden by default, reveal on click
-- Example sentence area
-- Word family expandable section
-- Review actions:
-  - Known
-  - Unsure
-  - Unknown
-- Auto-advance after review
-- Last-visited word restore by scope
-- Right-side Q-version companion illustration system tied to latest review action
-
-Primary files:
-- `src/components/WordCardExperience.tsx`
-- `src/pages/WordCardModePage.tsx`
-- `src/pages/PersonalVocabularyBankWordCardPage.tsx`
-- `src/components/WordCardCompanion.tsx`
-
-Important current note:
-- The Q-version companion system has been heavily customized and is still mid-iteration.
-- There are uncommitted asset and presentation changes around transparent cutout illustrations.
-
-### Word List
-Implemented.
-
-What exists:
-- Shared table-based list mode
-- Columns:
-  - Number
-  - Word
-  - Phonetic + audio
-  - Meaning
-  - Spelling
-  - Seven Memory Boxes
-- Inline spelling input
-- Enter key submits spelling attempt
-- Each row shows seven memory marks
-- Single click applies `check`
-- Double click applies `cross`
-
-Primary files:
-- `src/pages/WordListModePage.tsx`
-- `src/components/WordListTable.tsx`
-
-### AI Reading
-Implemented.
-
-What exists:
-- Learned-word set selection
-- Article generation from learned words
-- Unknown-word ratio kept around 5% to 10%
-- Translation show/hide
-- Reading font controls
-- Collapsible reading card
-- Single-click word insight
-- Double-click add-to-bank logic
-- Resizable Word Insight panel
-
-Primary file:
-- `src/pages/AiReadingPage.tsx`
-
-Important current note:
-- AI Reading exists, but the double-click add-to-bank interaction previously needed real-user verification.
-- Current code includes both article-level double-click handling and per-word button double-click handling.
-
-### Personal Vocabulary Bank
-Implemented.
-
-What exists:
-- Separate page for collected words
-- Reuses the same list system and word-card system
-- Displays source metadata per word
-- Supports memory boxes and spelling progress like the main vocabulary system
-
-Primary files:
-- `src/pages/PersonalVocabularyBankPage.tsx`
-- `src/pages/PersonalVocabularyBankWordCardPage.tsx`
-- `src/data/personalVocabulary.ts`
-
-## 3. Current Architecture
-
-### Frontend Framework
+Current implementation is:
 - React
 - TypeScript
 - Tailwind CSS
-- `react-router-dom`
 - Vite
+- client-side localStorage persistence
 
-### Database Structure
 There is no backend database.
 
-Current storage model:
-- Source vocabulary content: `src/data/vocabulary.json`
-- Normalized runtime model: `src/data/vocabulary.ts`
-- Runtime progress persistence: browser `localStorage`
-- Personal vocabulary persistence: browser `localStorage`
+## 2. Current Product Surfaces
 
-Local storage keys:
+Active main routes / modules:
+- Landing Page
+- Vocabulary Library
+- Word Card Mode
+- Word List Mode
+- AI Reading
+- Vocabulary Garden
+- My Vocabulary Bank
+
+Not currently active as product modules:
+- AI Review Coach
+- Collocation System
+
+Those routes should redirect to `/vocabulary-library`.
+
+## 3. Current Architecture
+
+### 3.1 Core State
+
+`src/context/VocabularyContext.tsx` is the central state layer.
+
+It is responsible for:
+- loading normalized vocabulary
+- loading persisted progress
+- loading personal vocabulary
+- exposing review/memory mutations
+- exposing spelling mutations
+- exposing personal bank mutations
+- background pending enrichment pass
+
+Do not casually split business logic away from this context unless there is a strong reason.
+
+### 3.2 Vocabulary Source
+
+Vocabulary source flow:
+
+1. Raw source:
+   - `src/data/vocabulary.json`
+2. Runtime normalization:
+   - `src/data/vocabulary.ts`
+3. Shared consumption:
+   - `VocabularyContext`
+4. UI reads via:
+   - `useVocabulary()`
+
+### 3.3 Persistence
+
+Current important localStorage keys:
 - `ivys-challenge.vocabulary-progress`
 - `ivys-challenge.personal-vocabulary`
 - `ivys-challenge.sidebar-width`
 - `ivys-challenge.sidebar-order`
 - `ivy-word-card-last-word:<scope>`
 
-### Major Components
-- `src/components/AppLayout.tsx`
-  - application shell
-  - sidebar
-  - frame ratio
-  - focus-mode layout behavior
-- `src/components/WordCardExperience.tsx`
-  - shared word card engine
-- `src/components/WordCardCompanion.tsx`
-  - right-side Q-version illustration and bubble text
-- `src/components/WordListTable.tsx`
-  - shared word-list engine
-- `src/components/VocabularyGardenChapterCard.tsx`
-  - chapter-level garden visualization
+Do not rename these without a deliberate migration.
 
-### Data Flow
-1. Raw vocabulary is imported from `src/data/vocabulary.json`.
-2. `src/data/vocabulary.ts` normalizes it into `VocabularyWord` records.
-3. `VocabularyContext` merges:
-   - base vocabulary data
-   - persisted progress state
-   - personal vocabulary entries
-4. Pages read state through `useVocabulary()`.
-5. Review actions, memory-box updates, spelling attempts, and personal-bank additions all write back through `VocabularyContext`.
+## 4. Current Data Models
 
-This is currently a client-side single-source-of-truth architecture.
-
-## 4. Vocabulary Data Model
+### 4.1 VocabularyWord
 
 Defined in:
 - `src/data/vocabulary.ts`
 
-### Core Types
+Important fields:
+- `id`
+- `chapter`
+- `word`
+- `phonetic`
+- `audio`
+- `part_of_speech`
+- `meaning`
+- `example`
+- `word_family`
+- `collocations`
+- `memory`
+- `spelling`
+- `memoryMarks`
+- `memoryHistory`
+- `lastReviewAction`
+- `learnedOn`
 
-```ts
-type MemoryBoxes = [
-  boolean,
-  boolean,
-  boolean,
-  boolean,
-  boolean,
-  boolean,
-  boolean
-];
+`learnedOn` is important for current AI Reading word selection.
 
-type SpellingStats = {
-  attempts: number;
-  correct: number;
-  errors: number;
-};
-
-type MemoryMark = 'empty' | 'check' | 'cross';
-
-type WordAction = 'known' | 'unsure' | 'unknown';
-
-type VocabularyWord = {
-  id: string;
-  chapter: number;
-  word: string;
-  phonetic: string;
-  audio: string;
-  part_of_speech: string;
-  meaning: string;
-  example: string;
-  word_family: string[];
-  collocations: string[];
-  memory: MemoryBoxes;
-  spelling: SpellingStats;
-  memoryMarks: MemoryMark[];
-  memoryHistory: MemoryMark[][];
-  lastReviewAction?: WordAction;
-};
-```
-
-### Persisted Progress Model
-
-```ts
-type PersistedWordState = {
-  memory: MemoryBoxes;
-  spelling: SpellingStats;
-  memoryMarks: MemoryMark[];
-  memoryHistory: MemoryMark[][];
-  lastReviewAction?: WordAction;
-};
-```
-
-### Personal Vocabulary Model
+### 4.2 PersonalVocabularyEntry
 
 Defined in:
 - `src/data/personalVocabulary.ts`
 
-```ts
-type PersonalVocabularySource = {
-  label: string;
-  detail: string;
-  dateAdded: string;
-};
+Personal vocabulary can reference:
+- an existing main vocabulary word via `wordId`
+- or a custom captured word via `customWord`
 
-type PersonalVocabularyEntry = {
-  id: string;
-  source: PersonalVocabularySource;
-  wordId?: string;
-  customWord?: VocabularyWord;
-};
-```
+It also now supports:
+- `enrichment`
+- `aiEnrichment`
 
-## 5. Memory Box System
+These fields are important for current unfinished enrichment work.
 
-Current logic exists in:
-- `src/context/VocabularyContext.tsx`
+## 5. Learning Logic That Must Be Preserved
+
+### 5.1 Seven-Box Memory System
+
+Current rules:
+- `Known` fills the next empty memory box.
+- `Unsure` removes the most recent filled memory box when possible.
+- `Unknown` resets all seven memory boxes.
+
+### 5.2 Word List Marking
+
+Current rules:
+- single click = `check`
+- double click = `cross`
+
+If all 7 marks are filled and more than 4 are `cross`, the row resets and the previous row is archived into `memoryHistory`.
+
+### 5.3 Spelling
+
+Spelling attempts are tracked separately from memory-box state.
+
+### 5.4 Personal Vocabulary
+
+Personal vocabulary reuses existing learning logic rather than inventing a second learning engine.
+
+## 6. Current Feature Status
+
+### 6.1 Vocabulary Library
+
+Implemented.
+
+Primary file:
+- `src/pages/VocabularyLibraryPage.tsx`
+
+What exists:
+- chapter cards
+- topic/progress display
+- entry points into Word Card / Word List
+
+### 6.2 Word Card
+
+Implemented.
+
+Primary files:
+- `src/components/WordCardExperience.tsx`
+- `src/pages/WordCardModePage.tsx`
+- `src/pages/PersonalVocabularyBankWordCardPage.tsx`
+
+What exists:
+- chapter and personal-bank card modes
+- word reveal flow
+- review actions
+- pronunciation
+- auto-advance
+- last visited position restore
+
+### 6.3 Word List
+
+Implemented.
+
+Primary files:
+- `src/pages/WordListModePage.tsx`
 - `src/components/WordListTable.tsx`
-- `src/components/WordCardExperience.tsx`
 
-### 7 Boxes Logic
-There are two related representations:
+What exists:
+- shared table
+- phonetic / meaning / spelling / memory boxes
+- selection mode behavior reused by personal vocabulary
 
-1. `memory`
-- fixed-length boolean tuple of 7 boxes
-- each `true` represents a filled box
+Recent UX additions:
+- larger selection checkbox
+- row click can toggle selection in selection mode
 
-2. `memoryMarks`
-- visual/action-oriented list of 7 marks
-- each slot is:
-  - `empty`
-  - `check`
-  - `cross`
+### 6.4 Personal Vocabulary Bank
 
-`memoryMarks` is the more detailed interaction layer.
-`memory` is derived from marks in list-mode flows and directly updated in word-card review flows.
+Implemented.
 
-### Check / Cross Rules
+Primary files:
+- `src/pages/PersonalVocabularyBankPage.tsx`
+- `src/data/personalVocabulary.ts`
 
-#### In Word List Mode
-- Single click on a box writes `check`
-- Double click on a box writes `cross`
-- Every click/double-click also updates spelling stats:
-  - `check` increments `attempts` and `correct`
-  - `cross` increments `attempts` and `errors`
+What exists:
+- personal vocabulary listing
+- source metadata
+- word-card integration
+- memory and spelling tracking
+- batch select
+- select all
+- batch delete
 
-#### In Word Card Mode
-- `Known`
-  - fills the next unfilled memory box
-  - increments `attempts`
-  - increments `correct`
-  - writes `check` into the next empty `memoryMarks` slot
-- `Unsure`
-  - removes the most recent filled memory box if one exists
-  - increments `attempts`
-  - does not increment `correct`
-  - does not increment `errors`
-  - does not add a cross mark
-- `Unknown`
-  - resets all 7 memory boxes to empty
-  - increments `attempts`
-  - increments `errors`
-  - resets `memoryMarks` to all `empty`
+Context API involved:
+- `removePersonalVocabularyEntries(ids: string[])`
 
-### Reset Rules
+### 6.5 Vocabulary Enrichment
 
-#### Word Card reset
-- Trigger: `Unknown`
-- Effect:
-  - all 7 `memory` boxes reset to `false`
-  - all `memoryMarks` reset to `empty`
+Partially implemented foundation.
 
-#### Word List reset
-- Trigger:
-  - if 7 marks are completed and more than 4 of them are `cross`
-- Effect:
-  - current `memoryMarks` snapshot is pushed into `memoryHistory`
-  - current marks are reset to seven `empty`
-  - `memory` becomes the derived empty state
+Primary file:
+- `src/data/vocabularyEnrichment.ts`
 
-### Mastered Word Review Rules
-There is no separate spaced-repetition calendar yet.
+What exists:
+- `normalizeWord()`
+- `enrichVocabularyWord()`
+- `getEnrichmentStatus()`
+- `shouldEnrichVocabularyEntry()`
+- `fetchDictionaryData()`
+- `enrichPendingVocabularyWord()`
+- `shouldAIEnrichVocabularyEntry()`
+- `createAIEnrichmentPlaceholder()`
 
-Current mastered behavior is:
-- a word with all or most boxes filled remains in the same vocabulary pool
-- it can still be reviewed again through card/list use
-- Vocabulary Garden interprets stronger review history as more mature growth
+Related context integration:
+- `VocabularyContext` runs a background pending-enrichment pass
+- duplicate requests are guarded
 
-In other words:
-- mastered-word tracking exists implicitly through `memory`, `memoryMarks`, `spelling`, and `memoryHistory`
-- there is not yet an independent review scheduler for mastered words
+What is not finished:
+- true AI enrichment execution
+- complete end-to-end enrichment orchestration beyond current foundations
 
-## 6. AI Reading Logic
+### 6.6 AI Reading
 
-Current logic exists in:
+This area changed recently and is the most important current handoff topic.
+
+#### Old Direction
+
+AI Reading previously used local rule-based article construction directly in the page / generation layer.
+
+That direction has now been intentionally stopped.
+
+#### New Direction
+
+AI Reading is now structured as:
+
+Vocabulary Input  
+↓  
+AI Generation Service  
+↓  
+Generated Reading  
+↓  
+Validation
+
+#### Current Important Files
+
 - `src/pages/AiReadingPage.tsx`
+- `src/services/aiReadingService.ts`
+- `src/services/aiProvider.ts`
+- `src/data/aiReadingGeneration.ts`
 
-### Selected Words
-- `learnedWordPool` is built from words whose `memory.some(Boolean)` is true and whose word form is a single token
-- if learned words are fewer than 10, the system falls back to a broader single-word pool
-- `learnedWords` selects a rolling set of 12 words using `setIndex`
+#### Current Responsibilities
 
-### Unknown Word Ratio
-- `unknownWordPool` is built from words that have not started learning: `!word.memory.some(Boolean)`
-- it excludes already selected learned words
-- `unknownWords` selects up to 6 from that pool based on `articleVariant`
-- the article generator mixes learned and unknown words
-- `unknownRatio` is calculated from article segments and displayed as a percentage
-- the UI copy states the intended unknown range is 5% to 10%
+`src/pages/AiReadingPage.tsx`
+- selects today's learned words
+- chooses word count
+- triggers article generation
+- renders article
+- renders translation
+- handles click / double-click interaction
+- adds unknown words to personal bank
 
-### Translation Behavior
-- `translationVisible` toggles whether translation paragraphs are rendered
-- translation content is generated by `getTranslationParagraphs(articleVariant)`
-- translation is hidden by default and shown on demand
+`src/services/aiReadingService.ts`
+- main generation entry point
+- uses provider if available
+- parses provider JSON
+- validates output
+- falls back when provider is unavailable or fails
 
-### Word Interaction
+`src/services/aiProvider.ts`
+- provider abstraction
+- currently environment-configured
+- not tied to a single vendor at interface level
 
-#### Single click
-- clicking a word segment with a bound `VocabularyWord` sets `selectedWord`
-- `Word Insight` shows:
-  - word
-  - phonetic
-  - audio button
-  - part of speech
-  - meaning
+`src/data/aiReadingGeneration.ts`
+- semantic analysis
+- prompt construction
+- validation
+- article text to clickable reading segments
 
-#### Double click
-There are two paths:
+#### Current Provider Config
 
-1. Double click on a bound article word button
-- handled inside the mapped word button
-- directly calls `handleAddUnknownWord(segment.word)`
+The provider layer currently expects:
+- `VITE_AI_PROVIDER_ENDPOINT`
+- `VITE_AI_PROVIDER_API_KEY`
+- `VITE_AI_PROVIDER_MODEL`
 
-2. Double click on selected plain text or a non-bound reading word
-- handled at article container level
-- uses selected browser text or `data-reading-word`
-- normalizes text
-- if a known vocabulary entry matches, adds that word
-- otherwise creates a `customWord`
+If those are missing:
+- AI Reading must return `mode: "fallback"`
 
-#### Add to personal bank
-- uses `addPersonalVocabularyWord`
-- source metadata is:
-  - `label: 'AI Reading'`
-  - `detail: "Today's Reading"`
-  - current date
+That fallback behavior is intentional and should not be hidden.
 
-## 7. Current UI Design Rules
+#### Current AI Reading Testing
 
-### Colors
-Defined mainly in:
-- `tailwind.config.ts`
-- `src/styles.css`
+Current tests cover:
+- semantic grouping
+- prompt requirements
+- fallback variation across repeated generation
+- provider branch with mocked JSON response
 
-Core colors:
-- `sand: #F5F0E8`
-- `ink: #201A15`
-- `taupe: #76695D`
-- `line: #DED2C5`
-- `panel: rgba(255,255,255,0.72)`
+Relevant file:
+- `tests/aiReadingGeneration.test.mjs`
 
-Global background:
-- warm layered beige gradient in `src/styles.css`
+Important note:
+- current Node-based test flow uses `.tmp-tests/` bundle artifacts
+- current bundling commands are listed in `HANDOFF.md`
 
-Panel treatment:
-- thin warm borders
-- translucent white/beige panel surfaces
-- soft card shadow
+### 6.7 Vocabulary Garden
 
-### Typography
-- Display font stack:
-  - `Iowan Old Style`
-  - `Palatino Linotype`
-  - `serif`
-- Body font stack:
-  - `Avenir Next`
-  - `Helvetica Neue`
-  - `sans-serif`
+Implemented as a working module, but still not clearly final.
 
-Use pattern:
-- large serif headlines
-- light uppercase metadata labels with wide tracking
-- restrained body text with soft taupe color
+Primary files:
+- `src/pages/VocabularyGardenPage.tsx`
+- `src/data/vocabularyGarden.ts`
 
-### Spacing
-- generous whitespace is intentional
-- desktop frame uses a fixed large presentation canvas
-- common section gaps are wide (`gap-8`, `gap-10`)
-- cards and shell use roomy internal padding
+Treat this as usable but still open to refinement.
 
-### Sidebar Behavior
-- draggable item ordering
-- resizable width
-- width persisted in local storage
-- order persisted in local storage
-- not mobile-first; optimized around a desktop framed shell
+## 7. Current Working Tree Reality
 
-### Cursor
-Current CSS state:
-- rabbit cursor is only applied under `.system-shell, .system-shell *`
-- that means it is not yet guaranteed across the entire system, especially focus-mode and landing views
+At handoff time, the repository is not clean.
 
-File:
-- `src/styles.css`
-
-## 8. Pending Tasks
-
-### Highest Priority Documentation / Continuation Reality
-The app has many uncommitted UI changes in working tree.
-Before any new development, a new Codex should inspect current `git status` and verify which visual changes are intentional.
-
-### Vocabulary Garden
-Status: partially implemented, not finished.
-
-What already exists:
-- sidebar entry
-- route
-- dedicated page
-- chapter-level garden summaries
-- global stage summaries
-- custom stage icons
-- chapter dot/growth visualization
-- growth calculation layer in `src/data/vocabularyGarden.ts`
-
-What is still incomplete:
-- final visual polish
-- final interaction design
-- alignment with the product spec as a finished module
-- possible cleanup of current intermediate UI decisions
-
-### AI Personal Teacher
-Status: not implemented.
-
-Current nearest concept:
-- no real AI Personal Teacher page exists
-- previous `AI Review Coach` page has been removed from active product flow
-- `/ai-review-coach` currently redirects away
-
-Future work should define:
-- teacher persona
-- coaching logic
-- study recommendations
-- integration with vocabulary / reading / review signals
-
-### Q-version Companion Cleanup
-Status: partially implemented, still in iteration.
-
-Current reality:
-- review-state-based illustrations and speech bubble text exist
-- custom assets were repeatedly revised
-- current transparent cutout state needs in-browser visual verification after the latest asset replacement
-
-### Rabbit Cursor Rollout
-Status: incomplete.
-
-Current reality:
-- rabbit cursor asset exists: `src/assets/rabbit-cursor-user.png`
-- CSS applies cursor only inside `.system-shell`
-- landing page and focus-mode pages may not fully inherit it
-- user explicitly wanted the rabbit cursor across the whole system
-
-### Build / Sync / Cleanup
-Status: not done.
-
-Current reality:
-- working tree has many modified and untracked files
-- nothing in this state has been documented as pushed to GitHub
-- before syncing, a new Codex should:
-  - inspect changes
-  - verify build
-  - remove accidental artifacts if any
-  - then commit intentionally
-
-## 9. How a New Codex Conversation Should Continue
-
-### Required first step
-In a new conversation, the next Codex should:
-1. read `AGENTS.md`
-2. read `HANDOFF.md`
-3. read `DECISIONS.md`
-4. read `PROJECT_HANDOFF.md`
-
-### Then do this
-- do not restate full history
-- summarize current state in a few sentences
-- compare docs with current code reality
-- inspect `git status`
-- continue from the highest-priority unfinished task the user chooses
-
-### Recommended first verification checklist
-- `git status --short`
-- inspect `src/components/WordCardCompanion.tsx`
-- inspect `src/styles.css`
-- inspect `src/pages/VocabularyGardenPage.tsx`
-- inspect `src/data/vocabularyGarden.ts`
-- run:
-  - `./node_modules/.bin/tsc --noEmit`
-  - `./node_modules/.bin/vite build`
-
-### Best prompt for a new Codex conversation
-Use this exact message:
-
-```text
-继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md，不要复述整个历史。先检查当前代码和交接文档是否一致，再告诉我当前未完成事项，并从最优先的一项开始继续。
-```
-
-### If you want to force a specific next task
-Use one of these:
-
-```text
-继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md。不要复述整个历史。先检查当前代码和交接文档是否一致。然后优先处理：1）兔子 cursor 全系统应用，或 2）Vocabulary Garden 收尾，或 3）Word Card 右侧插画系统清理。
-```
-
-## 10. Current Working Tree Reality
-
-At the time of this handoff, the working tree includes many uncommitted changes, including:
-- `src/App.tsx`
-- `src/components/AppLayout.tsx`
-- `src/components/WordCardExperience.tsx`
-- `src/components/WordCardCompanion.tsx`
+Working tree includes modified or new files such as:
+- `src/components/WordListTable.tsx`
+- `src/context/VocabularyContext.tsx`
+- `src/data/personalVocabulary.ts`
+- `src/data/vocabulary.ts`
 - `src/pages/AiReadingPage.tsx`
 - `src/pages/PersonalVocabularyBankPage.tsx`
-- `src/pages/PersonalVocabularyBankWordCardPage.tsx`
-- `src/pages/VocabularyGardenPage.tsx`
-- `src/pages/WordCardModePage.tsx`
-- `src/pages/WordListModePage.tsx`
-- `src/styles.css`
-- garden assets
-- word-card illustration assets
-- `src/data/vocabularyGarden.ts`
-- `src/utils/`
+- `src/data/aiReadingGeneration.ts`
+- `src/data/vocabularyEnrichment.ts`
+- `src/services/`
+- `tests/`
+- `tsconfig.test.json`
+- `.tmp-tests/`
 
-Also:
-- `src/pages/AiReviewCoachPage.tsx` is deleted
+Meaning:
+- do not assume a clean branch
+- do not blindly commit
+- do not revert unrelated changes
 
-New Codex should not assume the current state has been committed or pushed.
+## 8. What Was Verified Most Recently
+
+Verified successfully:
+- `npx tsc --noEmit`
+- `npm run build`
+- `node --test tests/aiReadingGeneration.test.mjs`
+
+Build note:
+- Vite build passes
+- there is still a large chunk warning
+- this is not a functional blocker for the current handoff
+
+## 9. Main Unfinished Streams
+
+The next Codex should not guess across all of these at once.
+Ivy should choose one stream first.
+
+### Stream A: Real AI Reading Provider Integration
+
+Current state:
+- architecture exists
+- provider abstraction exists
+- fallback exists
+- page integration exists
+
+Not done:
+- real production provider wiring
+- env setup
+- possibly vendor-specific payload shaping
+
+Best next action if this stream is chosen:
+- inspect `src/services/aiProvider.ts` and `src/services/aiReadingService.ts`
+- decide the real provider target
+- implement provider request/response shape against that target
+
+### Stream B: Vocabulary Enrichment Continuation
+
+Current state:
+- status model exists
+- pending enrichment path exists
+- dictionary enrichment helper exists
+- AI enrichment placeholder data model exists
+
+Not done:
+- true AI enrichment execution
+- complete enrichment lifecycle beyond placeholders
+
+Best next action if this stream is chosen:
+- inspect `src/data/vocabularyEnrichment.ts`
+- inspect `src/context/VocabularyContext.tsx`
+- decide whether next step is AI enrichment execution or repair/migration hardening
+
+### Stream C: Vocabulary Garden Refinement
+
+Current state:
+- route and page exist
+- data layer exists
+- visually usable
+
+Not done:
+- confirmed final interaction / product polish
+
+Best next action if this stream is chosen:
+- inspect `src/pages/VocabularyGardenPage.tsx`
+- inspect `src/data/vocabularyGarden.ts`
+- compare actual page against desired product feel
+
+### Stream D: UI / Experience Polish
+
+Possible targets:
+- AI Reading presentation polish
+- Word Card companion refinement
+- remaining selection UX issues
+- large-bundle cleanup if desired
+
+This stream should only proceed if ivy explicitly chooses it.
+
+## 10. Recommended New-Conversation Startup Procedure
+
+When a new Codex conversation starts, it should do this in order:
+
+1. Read:
+   - `AGENTS.md`
+   - `HANDOFF.md`
+   - `DECISIONS.md`
+   - `PROJECT_HANDOFF.md`
+2. Inspect:
+   - `git status --short`
+3. Compare docs with real code.
+4. Confirm which single unfinished stream ivy wants next.
+5. Continue only that stream.
+
+## 11. Recommended Prompt For The New Codex Conversation
+
+Use this message:
+
+```text
+继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md，不要复述整个历史。先检查交接文档和当前代码是否一致，再告诉我当前未完成事项。然后只聚焦最优先的一项继续。
+```
+
+If you already know the exact next stream, use a more specific version, for example:
+
+```text
+继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md，不要复述整个历史。先检查交接文档和当前代码是否一致，然后继续 AI Reading 的真实 provider 接入，不要改动无关模块。
+```
+
+Or:
+
+```text
+继续这个项目。先读取 AGENTS.md、HANDOFF.md、DECISIONS.md、PROJECT_HANDOFF.md，不要复述整个历史。先检查交接文档和当前代码是否一致，然后继续 Vocabulary Enrichment 的下一阶段，只处理 enrichment 相关内容。
+```
+
+## 12. Final Cautions For The Next Codex
+
+- Do not trust old chat history over the code.
+- Do not assume AI Reading is fully model-backed yet.
+- Do not assume enrichment is fully complete.
+- Do not clean or revert the working tree unless ivy explicitly asks.
+- Do not open multiple unfinished streams in one turn unless ivy asks.
